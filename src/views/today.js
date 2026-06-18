@@ -82,7 +82,7 @@ async function paintToday(root) {
           <span class="pill accent">~${mins} min</span>
           <span class="pill">${day.items.length} exercises</span>
         </div>
-        <ul class="mini-list">${day.items.map(it => `<li>${LIBRARY[it.id] ? LIBRARY[it.id].name : it.id}</li>`).join('')}</ul>
+        <ul class="mini-list">${day.items.map(it => `<li>${LIBRARY[it.id] ? LIBRARY[it.id].name : it.id} <span style="opacity:.55; font-variant-numeric:tabular-nums;">${it.sets}×${it.reps}</span></li>`).join('')}</ul>
       </div>
       <button class="btn" id="start">${continuing ? '▶︎ Continue workout' : '⚡ Start workout'}</button>
       <div style="height:10px;"></div>
@@ -101,8 +101,7 @@ async function paintToday(root) {
         </div>
       </div>
       <div class="commandment"><span class="num">${c.num}.</span><em>${c.text}</em></div>
-      <div class="section-label">Next session</div>
-      <div class="card"><p class="lead">${nextTrainingHint(plan)}</p></div>
+      ${nextUpCard(plan)}
       <div class="section-label">Browse the week</div>
       <div class="ex-list">
         ${plan.map(s => `
@@ -194,16 +193,41 @@ function celebrate(list) {
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
 
-function nextTrainingHint(plan) {
+// the next training day on the calendar, with a human "when" label
+function nextTrainingDay(plan) {
   const trainingDows = plan.map(p => p.dow);
   const idx = new Date().getDay();
   for (let i = 1; i <= 7; i++) {
     const d = DOW[(idx + i) % 7];
     if (trainingDows.includes(d)) {
-      const p = plan.find(x => x.dow === d);
+      const day = plan.find(x => x.dow === d);
       const when = i === 1 ? 'Tomorrow' : `In ${i} days`;
-      return `${when}: <strong>${p.title}</strong>. Come in fed and warmed up.`;
+      return { day, when };
     }
   }
-  return 'Rest well.';
+  return null;
+}
+
+// rest-day "next up" prep block: shows the next session's full exercise list so he can mentally prepare
+function nextUpCard(plan) {
+  const next = nextTrainingDay(plan);
+  if (!next) return '';
+  const { day, when } = next;
+  const mins = estimateMinutes(day);
+  const list = day.items.map(it => {
+    const ex = LIBRARY[it.id];
+    return `<li>${ex ? ex.name : it.id} <span style="opacity:.55; font-variant-numeric:tabular-nums;">${it.sets}×${it.reps}</span></li>`;
+  }).join('');
+  return `
+    <div class="section-label">Next up — prep for it</div>
+    <div class="card card-hero">
+      <div class="eyebrow">${when} • ${day.dow}</div>
+      <h2 class="screen-title" style="font-size:24px;">${day.title}</h2>
+      <div style="margin:12px 0 4px; display:flex; gap:8px; flex-wrap:wrap;">
+        <span class="pill accent">~${mins} min</span>
+        <span class="pill">${day.items.length} exercises</span>
+      </div>
+      <ul class="mini-list">${list}</ul>
+      <p class="coach-last" style="margin-top:10px;">Come in fed and warmed up. Picture the session before you walk in.</p>
+    </div>`;
 }

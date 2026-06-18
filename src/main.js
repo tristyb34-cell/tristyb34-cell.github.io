@@ -2,12 +2,14 @@
    DAX — app shell, router & navigation (Phase 0)
    ============================================================ */
 import { renderToday } from './views/today.js';
+import { renderPlan } from './views/plan.js';
 import { renderHistory } from './views/history.js';
 import { renderDiet } from './views/diet.js';
 import { renderProgress } from './views/progress.js';
 
 const TABS = [
   { id: 'today',    label: 'Today',    icon: '⚡', tint: true,  render: renderToday },
+  { id: 'plan',     label: 'Plan',     icon: '📋', tint: false, render: renderPlan },
   { id: 'history',  label: 'History',  icon: '📊', tint: false, render: renderHistory },
   { id: 'diet',     label: 'Fuel',     icon: '🍽️', tint: false, render: renderDiet },
   { id: 'progress', label: 'Progress', icon: '📸', tint: false, render: renderProgress },

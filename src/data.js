@@ -6,7 +6,7 @@
 export const COMMANDMENTS = [
   'Thou shalt show up, even when thou canst not be fucked.',
   'Thou shalt add a rep or a kilo, or thou art merely exercising, not growing.',
-  'Thou shalt eat in surplus. Skinny men do not skip meals.',
+  'Thou shalt eat in surplus, and not skip meals, for that is the skinny man’s curse.',
   'Thou shalt hit thy protein every single day.',
   'Thou shalt sleep 7-9 hours, for muscle is built in the dark, not the gym.',
   'Thou shalt not drink thy gains away.',

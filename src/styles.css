@@ -165,7 +165,7 @@ h1.screen-title { font-size: 30px; font-weight: 850; line-height: 1.05; margin-b
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
   height: calc(var(--tabbar-h) + var(--safe-bot));
   padding-bottom: var(--safe-bot);
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(5, 1fr);
   background: linear-gradient(180deg, rgba(22,24,31,.82), rgba(13,14,18,.98));
   backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
   border-top: 1px solid var(--line);
