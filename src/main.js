@@ -1,6 +1,7 @@
 /* ============================================================
    DAX — app shell, router & navigation (Phase 0)
    ============================================================ */
+import { APP_VERSION } from './data.js';
 import { renderToday } from './views/today.js';
 import { renderPlan } from './views/plan.js';
 import { renderHistory } from './views/history.js';
@@ -42,6 +43,9 @@ async function go(tabId) {
 }
 
 async function init() {
+  const vEl = document.getElementById('app-version');
+  if (vEl) vEl.textContent = APP_VERSION;
+
   const startTab = (location.hash || '').replace('#', '') || 'today';
   await go(startTab);
 

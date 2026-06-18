@@ -3,6 +3,9 @@
    Plan, menu, exercises etc. get added here in later phases.
    ============================================================ */
 
+// App version watermark — bump this AND the CACHE const in sw.js together on every ship.
+export const APP_VERSION = 'v0.11.1';
+
 export const COMMANDMENTS = [
   'Thou shalt show up, even when thou canst not be fucked.',
   'Thou shalt add a rep or a kilo, or thou art merely exercising, not growing.',

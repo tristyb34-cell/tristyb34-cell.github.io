@@ -87,6 +87,14 @@ body {
   text-transform: uppercase;
   color: var(--text-faint);
 }
+.app-version {
+  margin-left: auto;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--text-faint);
+  opacity: .55;
+  font-variant-numeric: tabular-nums;
+}
 
 /* ---------- view area ---------- */
 .view {
