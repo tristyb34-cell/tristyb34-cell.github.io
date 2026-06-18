@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>DAX</title>
+  <meta name="description" content="Tristan is getting DAAXXXX" />
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="theme-color" content="#0D0E12" />
+
+  <!-- iOS home-screen app -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="DAX" />
+  <link rel="apple-touch-icon" href="/assets/icons/icon-180.png" />
+
+  <link rel="stylesheet" href="/src/styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="app-header">
+      <div class="brand">
+        <span class="brand-mark">DAX</span>
+        <span class="brand-sub" id="header-sub">getting daaxxxx</span>
+      </div>
+    </header>
+
+    <main id="view" class="view"></main>
+
+    <nav class="tabbar" id="tabbar"></nav>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

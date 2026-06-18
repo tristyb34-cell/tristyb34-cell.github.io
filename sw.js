@@ -1,0 +1,74 @@
+/* DAX service worker — offline app shell.
+   Bump CACHE when you ship changes so clients pull fresh files. */
+const CACHE = 'dax-v0.10.0';
+
+const ASSETS = [
+  '/',
+  '/index.html',
+  '/manifest.webmanifest',
+  '/src/styles.css',
+  '/src/main.js',
+  '/src/store.js',
+  '/src/data.js',
+  '/src/program.js',
+  '/src/plan.js',
+  '/src/workouts.js',
+  '/src/session.js',
+  '/src/editor.js',
+  '/src/charts.js',
+  '/src/nutrition.js',
+  '/src/motivation.js',
+  '/src/notify.js',
+  '/src/profile.js',
+  '/src/onboarding.js',
+  '/src/review.js',
+  '/src/reentry.js',
+  '/src/skills.js',
+  '/src/skilltree.js',
+  '/src/schedule.js',
+  '/src/views/today.js',
+  '/src/views/history.js',
+  '/src/views/diet.js',
+  '/src/views/progress.js',
+  '/assets/icons/icon-192.png',
+  '/assets/icons/icon-512.png',
+  '/assets/icons/icon-180.png',
+];
+
+self.addEventListener('install', (e) => {
+  e.waitUntil((async () => {
+    const c = await caches.open(CACHE);
+    await c.addAll(ASSETS);
+    // precache every exercise image so workouts work offline in the gym
+    try {
+      const idx = await fetch('/assets/exercises/index.json').then(r => r.json());
+      await c.addAll(idx);
+    } catch (e) { /* images will cache lazily on first view */ }
+    await self.skipWaiting();
+  })());
+});
+
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
+  );
+});
+
+// network-first for navigations (so updates show), cache-first for assets (so it's fast & offline)
+self.addEventListener('fetch', (e) => {
+  const req = e.request;
+  if (req.method !== 'GET') return;
+
+  if (req.mode === 'navigate') {
+    e.respondWith(fetch(req).catch(() => caches.match('/index.html')));
+    return;
+  }
+  e.respondWith(
+    caches.match(req).then(cached => cached || fetch(req).then(res => {
+      const copy = res.clone();
+      caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {});
+      return res;
+    }).catch(() => cached))
+  );
+});
