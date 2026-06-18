@@ -58,7 +58,19 @@ async function init() {
 
   // register service worker for offline / installability
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
+    // updateViaCache:'none' → always hit the network for a fresh sw.js so updates are detected immediately
+    navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
+      .then(reg => { reg.update(); })
+      .catch(() => {});
+    // when a new SW takes control (after skipWaiting + clients.claim), reload once so fresh code loads itself
+    if (navigator.serviceWorker.controller) {
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      });
+    }
   }
 }
 
