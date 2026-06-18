@@ -76,7 +76,7 @@ async function paintToday(root) {
     const mins = estimateMinutes(day);
     const continuing = active && active.dow === day.dow && Object.keys(active.log || {}).length;
     mid = `
-      <div class="card card-hero">
+      <div class="card card-hero card-tap" id="today-card">
         <div class="eyebrow">${today} • Training day</div>
         <h1 class="screen-title">${day.title}</h1>
         <div style="margin:14px 0 4px; display:flex; gap:8px; flex-wrap:wrap;">
@@ -84,9 +84,8 @@ async function paintToday(root) {
           <span class="pill">${day.items.length} exercises</span>
         </div>
         <ul class="mini-list">${day.items.map(it => `<li>${LIBRARY[it.id] ? LIBRARY[it.id].name : it.id} <span style="opacity:.55; font-variant-numeric:tabular-nums;">${it.sets}×${it.reps}</span></li>`).join('')}</ul>
+        <div class="tap-hint">👁 Tap to preview all exercises ›</div>
       </div>
-      <button class="btn ghost" id="preview">👁 Preview the exercises</button>
-      <div style="height:10px;"></div>
       <button class="btn" id="start">${continuing ? '▶︎ Continue workout' : '⚡ Start workout'}</button>
       <div style="height:10px;"></div>
       <button class="btn ghost" id="edit">✎ Edit my plan</button>
@@ -123,12 +122,12 @@ async function paintToday(root) {
   // wiring
   const startBtn = root.querySelector('#start');
   if (startBtn) startBtn.addEventListener('click', () => renderSession(root, day));
-  const previewBtn = root.querySelector('#preview');
-  if (previewBtn) previewBtn.addEventListener('click', () => openDayPreview(root, day.dow, () => paintToday(root)));
-  const previewNext = root.querySelector('#preview-next');
-  if (previewNext) {
+  const todayCard = root.querySelector('#today-card');
+  if (todayCard) todayCard.addEventListener('click', () => openDayPreview(root, day.dow, () => paintToday(root)));
+  const nextCard = root.querySelector('#nextup-card');
+  if (nextCard) {
     const nt = nextTrainingDay(plan);
-    if (nt) previewNext.addEventListener('click', () => openDayPreview(root, nt.day.dow, () => paintToday(root)));
+    if (nt) nextCard.addEventListener('click', () => openDayPreview(root, nt.day.dow, () => paintToday(root)));
   }
   root.querySelector('#edit').addEventListener('click', () => openEditor(root));
   root.querySelector('#calis').addEventListener('click', () => openSkillTree(root));
@@ -230,7 +229,7 @@ function nextUpCard(plan) {
   }).join('');
   return `
     <div class="section-label">Next up — prep for it</div>
-    <div class="card card-hero">
+    <div class="card card-hero card-tap" id="nextup-card">
       <div class="eyebrow">${when} • ${day.dow}</div>
       <h2 class="screen-title" style="font-size:24px;">${day.title}</h2>
       <div style="margin:12px 0 4px; display:flex; gap:8px; flex-wrap:wrap;">
@@ -238,7 +237,7 @@ function nextUpCard(plan) {
         <span class="pill">${day.items.length} exercises</span>
       </div>
       <ul class="mini-list">${list}</ul>
-      <p class="coach-last" style="margin:10px 0 12px;">Come in fed and warmed up. Picture the session before you walk in.</p>
-      <button class="btn ghost" id="preview-next">👁 Preview the exercises</button>
+      <p class="coach-last" style="margin:10px 0 0;">Come in fed and warmed up. Picture the session before you walk in.</p>
+      <div class="tap-hint">👁 Tap to preview all exercises ›</div>
     </div>`;
 }
