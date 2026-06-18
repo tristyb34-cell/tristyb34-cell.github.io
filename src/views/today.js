@@ -5,6 +5,7 @@ import { getPlan, dayForToday } from '../plan.js';
 import { getActive } from '../workouts.js';
 import { renderSession } from '../session.js';
 import { openEditor } from '../editor.js';
+import { openDayPreview } from './plan.js';
 import { buildContext, greeting, nudges, checkMilestones } from '../motivation.js';
 import { evaluateAdaptive } from '../profile.js';
 import { openReview } from '../review.js';
@@ -84,6 +85,8 @@ async function paintToday(root) {
         </div>
         <ul class="mini-list">${day.items.map(it => `<li>${LIBRARY[it.id] ? LIBRARY[it.id].name : it.id} <span style="opacity:.55; font-variant-numeric:tabular-nums;">${it.sets}×${it.reps}</span></li>`).join('')}</ul>
       </div>
+      <button class="btn ghost" id="preview">👁 Preview the exercises</button>
+      <div style="height:10px;"></div>
       <button class="btn" id="start">${continuing ? '▶︎ Continue workout' : '⚡ Start workout'}</button>
       <div style="height:10px;"></div>
       <button class="btn ghost" id="edit">✎ Edit my plan</button>
@@ -120,6 +123,13 @@ async function paintToday(root) {
   // wiring
   const startBtn = root.querySelector('#start');
   if (startBtn) startBtn.addEventListener('click', () => renderSession(root, day));
+  const previewBtn = root.querySelector('#preview');
+  if (previewBtn) previewBtn.addEventListener('click', () => openDayPreview(root, day, () => paintToday(root)));
+  const previewNext = root.querySelector('#preview-next');
+  if (previewNext) {
+    const nt = nextTrainingDay(plan);
+    previewNext.addEventListener('click', () => openDayPreview(root, nt ? nt.day : null, () => paintToday(root)));
+  }
   root.querySelector('#edit').addEventListener('click', () => openEditor(root));
   root.querySelector('#calis').addEventListener('click', () => openSkillTree(root));
   const rv = root.querySelector('#open-review');
@@ -228,6 +238,7 @@ function nextUpCard(plan) {
         <span class="pill">${day.items.length} exercises</span>
       </div>
       <ul class="mini-list">${list}</ul>
-      <p class="coach-last" style="margin-top:10px;">Come in fed and warmed up. Picture the session before you walk in.</p>
+      <p class="coach-last" style="margin:10px 0 12px;">Come in fed and warmed up. Picture the session before you walk in.</p>
+      <button class="btn ghost" id="preview-next">👁 Preview the exercises</button>
     </div>`;
 }

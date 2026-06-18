@@ -1,6 +1,7 @@
 /* ============================================================
    DAX — The Programme (read-only overview of every training day)
    See all your workouts at once; tap any exercise for the how-to.
+   openDayPreview() is reused by the Today screen to preview one session.
    ============================================================ */
 import { LIBRARY, estimateMinutes } from '../program.js';
 import { getPlan } from '../plan.js';
@@ -11,6 +12,23 @@ function clearFrameTimer() { if (frameTimer) { clearInterval(frameTimer); frameT
 
 export function renderPlan() {
   return { html: '', onMount: (root) => paint(root) };
+}
+
+// tappable exercise rows for one day's items
+function exerciseRows(items) {
+  return items.map((it, i) => {
+    const ex = LIBRARY[it.id];
+    if (!ex) return '';
+    return `
+      <button class="ex-card" data-idx="${i}">
+        <img class="ex-thumb" src="${ex.frames[0]}" alt="" loading="lazy" />
+        <div class="ex-meta">
+          <div class="ex-name">${ex.name}</div>
+          <div class="ex-sub">${it.sets} × ${it.reps} · ${it.rest}s rest · <span class="muscle">${ex.muscle}</span> · ${ex.equipment}</div>
+        </div>
+        <div class="ex-status">›</div>
+      </button>`;
+  }).join('');
 }
 
 async function paint(root) {
@@ -39,21 +57,7 @@ async function paint(root) {
         <span class="pill">${s.items.length} exercises</span>
       </div>
     </div>
-    <div class="ex-list">
-      ${s.items.map((it, i) => {
-        const ex = LIBRARY[it.id];
-        if (!ex) return '';
-        return `
-          <button class="ex-card" data-day="${di}" data-idx="${i}">
-            <img class="ex-thumb" src="${ex.frames[0]}" alt="" loading="lazy" />
-            <div class="ex-meta">
-              <div class="ex-name">${ex.name}</div>
-              <div class="ex-sub">${it.sets} × ${it.reps} · ${it.rest}s rest · <span class="muscle">${ex.muscle}</span></div>
-            </div>
-            <div class="ex-status">›</div>
-          </button>`;
-      }).join('')}
-    </div>`).join('');
+    <div class="ex-list" data-day="${di}">${exerciseRows(s.items)}</div>`).join('');
 
   root.innerHTML = `
     <div class="eyebrow">Your training</div>
@@ -63,19 +67,37 @@ async function paint(root) {
     <div style="height:14px;"></div>
     <button class="btn ghost" id="edit">✎ Edit my plan</button>`;
 
-  root.querySelectorAll('.ex-card').forEach(btn =>
-    btn.addEventListener('click', () => openHowto(root, plan, Number(btn.dataset.day), Number(btn.dataset.idx))));
+  root.querySelectorAll('.ex-list[data-day]').forEach(list => {
+    const di = Number(list.dataset.day);
+    list.querySelectorAll('.ex-card').forEach(btn =>
+      btn.addEventListener('click', () => openHowto(root, plan[di].items[Number(btn.dataset.idx)], () => paint(root))));
+  });
   root.querySelector('#edit').addEventListener('click', () => openEditor(root));
 }
 
-function openHowto(root, plan, di, idx) {
+// Reusable single-day preview screen. onBack() decides where the back button returns to.
+export function openDayPreview(root, day, onBack) {
   clearFrameTimer();
-  const item = plan[di].items[idx];
+  if (!day) { onBack(); return; }
+  root.innerHTML = `
+    <button class="back-btn" id="back">‹ Back</button>
+    <div class="eyebrow">${day.dow} • Preview</div>
+    <h1 class="screen-title">${day.title}</h1>
+    <p class="lead">~${estimateMinutes(day)} min · ${day.items.length} exercises. Tap any move to see how it looks and the home swap.</p>
+    <div class="ex-list">${exerciseRows(day.items)}</div>`;
+  root.querySelector('#back').addEventListener('click', () => { clearFrameTimer(); onBack(); });
+  root.querySelectorAll('.ex-card').forEach(btn =>
+    btn.addEventListener('click', () =>
+      openHowto(root, day.items[Number(btn.dataset.idx)], () => openDayPreview(root, day, onBack))));
+}
+
+function openHowto(root, item, onBack) {
+  clearFrameTimer();
   const ex = LIBRARY[item.id];
-  if (!ex) return;
+  if (!ex) { onBack(); return; }
 
   root.innerHTML = `
-    <button class="back-btn" id="back">‹ The Programme</button>
+    <button class="back-btn" id="back">‹ Back</button>
 
     <div class="ex-hero">
       <img id="frame" class="ex-hero-img" src="${ex.frames[0]}" alt="${ex.name}" />
@@ -92,7 +114,7 @@ function openHowto(root, plan, di, idx) {
     </details>
 
     <div style="height:8px;"></div>
-    <button class="btn ghost" id="to-list">Back to programme</button>`;
+    <button class="btn ghost" id="to-list">Back</button>`;
 
   if (ex.frames.length > 1) {
     let f = 0;
@@ -103,7 +125,6 @@ function openHowto(root, plan, di, idx) {
     }, 800);
   }
 
-  const back = () => paint(root);
-  root.querySelector('#back').addEventListener('click', back);
-  root.querySelector('#to-list').addEventListener('click', back);
+  root.querySelector('#back').addEventListener('click', onBack);
+  root.querySelector('#to-list').addEventListener('click', onBack);
 }
