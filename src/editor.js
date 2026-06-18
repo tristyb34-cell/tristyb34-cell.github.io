@@ -5,6 +5,7 @@
    ============================================================ */
 import { LIBRARY, GROUPS, libraryByGroup, newSlot } from './program.js';
 import { getPlan, savePlan, resetPlan } from './plan.js';
+import { getGym, hasEquipment, isMissing } from './equipment.js';
 
 const DOW_ORDER = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const DOW_FULL = { Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday', Sun: 'Sunday' };
@@ -13,7 +14,8 @@ let E = null; // { root, plan }
 
 export async function openEditor(root) {
   const plan = await getPlan();
-  E = { root, plan };
+  const gym = await getGym();
+  E = { root, plan, gym };
   render();
 }
 
@@ -42,7 +44,7 @@ function render() {
             <div class="edit-item">
               <img class="ex-thumb sm" src="${ex ? ex.frames[0] : ''}" alt="" loading="lazy" />
               <div class="edit-item-main">
-                <div class="ex-name">${ex ? ex.name : it.id}</div>
+                <div class="ex-name">${ex ? ex.name : it.id}${ex && isMissing(ex, E.gym) ? ' <span class="eq-flag">⚠ swap</span>' : ''}</div>
                 <div class="edit-fields">
                   <label>sets<input class="inp xs" data-edit="sets" data-day="${di}" data-item="${ii}" type="number" inputmode="numeric" value="${it.sets}" /></label>
                   <label>reps<input class="inp xs wide" data-edit="reps" data-day="${di}" data-item="${ii}" value="${escapeAttr(it.reps)}" /></label>
@@ -134,17 +136,21 @@ function act(btn) {
   }
 }
 
-/* ---------- exercise library picker ---------- */
+/* ---------- exercise library picker (gym-aware) ---------- */
 function openPicker(onPick) {
   const byGroup = libraryByGroup();
-  let overlay = document.createElement('div');
+  const gym = E.gym;
+  let gymOnly = gym.configured;
+
+  const overlay = document.createElement('div');
   overlay.id = 'picker';
   overlay.innerHTML = `
     <div class="picker-head">
       <input id="picker-search" placeholder="Search exercises…" />
       <button id="picker-close">Close</button>
     </div>
-    <div class="picker-body" id="picker-body">${groupHtml(byGroup, GROUPS)}</div>
+    ${gym.configured ? `<div style="padding:10px 16px 0;"><button class="pill accent" id="gym-filter">Gym only</button></div>` : ''}
+    <div class="picker-body" id="picker-body"></div>
   `;
   document.body.appendChild(overlay);
   requestAnimationFrame(() => overlay.classList.add('show'));
@@ -153,29 +159,43 @@ function openPicker(onPick) {
   overlay.querySelector('#picker-close').addEventListener('click', close);
 
   const body = overlay.querySelector('#picker-body');
-  overlay.querySelector('#picker-search').addEventListener('input', (e) => {
-    const q = e.target.value.trim().toLowerCase();
-    if (!q) { body.innerHTML = groupHtml(byGroup, GROUPS); bindRows(); return; }
-    const hits = Object.values(LIBRARY).filter(x =>
-      x.name.toLowerCase().includes(q) || x.muscle.toLowerCase().includes(q) || x.group.toLowerCase().includes(q));
-    body.innerHTML = `<div class="pick-group">${hits.map(rowHtml).join('') || '<p class="lead" style="padding:16px;">No matches.</p>'}</div>`;
-    bindRows();
-  });
+  const search = overlay.querySelector('#picker-search');
+  const filt = (arr) => gymOnly ? arr.filter(x => hasEquipment(x, gym)) : arr;
 
-  function bindRows() {
+  const redraw = () => {
+    const q = search.value.trim().toLowerCase();
+    if (q) {
+      const hits = filt(Object.values(LIBRARY).filter(x =>
+        x.name.toLowerCase().includes(q) || x.muscle.toLowerCase().includes(q) || x.group.toLowerCase().includes(q)));
+      body.innerHTML = `<div class="pick-group">${hits.map(ex => rowHtml(ex, gym)).join('') || '<p class="lead" style="padding:16px;">No matches.</p>'}</div>`;
+    } else {
+      const fg = {};
+      for (const g of GROUPS) fg[g] = filt(byGroup[g] || []);
+      body.innerHTML = groupHtml(fg, GROUPS, gym);
+    }
     body.querySelectorAll('.pick-row').forEach(r => r.addEventListener('click', () => { onPick(r.dataset.id); close(); }));
-  }
-  bindRows();
+  };
+
+  search.addEventListener('input', redraw);
+  const gf = overlay.querySelector('#gym-filter');
+  if (gf) gf.addEventListener('click', () => {
+    gymOnly = !gymOnly;
+    gf.textContent = gymOnly ? 'Gym only' : 'Showing all';
+    gf.classList.toggle('accent', gymOnly);
+    redraw();
+  });
+  redraw();
 }
 
-function groupHtml(byGroup, groups) {
+function groupHtml(byGroup, groups, gym) {
   return groups.map(g => byGroup[g] && byGroup[g].length
-    ? `<div class="section-label">${g}</div><div class="pick-group">${byGroup[g].map(rowHtml).join('')}</div>` : '').join('');
+    ? `<div class="section-label">${g}</div><div class="pick-group">${byGroup[g].map(ex => rowHtml(ex, gym)).join('')}</div>` : '').join('');
 }
-function rowHtml(ex) {
+function rowHtml(ex, gym) {
+  const missing = gym && isMissing(ex, gym);
   return `<button class="pick-row" data-id="${ex.id}">
     <img class="ex-thumb sm" src="${ex.frames[0]}" alt="" loading="lazy" />
-    <div class="ex-meta"><div class="ex-name">${ex.name}</div><div class="ex-sub">${ex.equipment} · ${ex.muscle}</div></div>
+    <div class="ex-meta"><div class="ex-name">${ex.name}</div><div class="ex-sub">${ex.equipment} · ${ex.muscle}${missing ? ' · <span class="eq-flag">not in your gym</span>' : ''}</div></div>
   </button>`;
 }
 

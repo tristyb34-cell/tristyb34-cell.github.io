@@ -552,3 +552,9 @@ h1.screen-title { font-size: 30px; font-weight: 850; line-height: 1.05; margin-b
 .stretch-item .nm { font-weight: 700; font-size: 14.5px; }
 .stretch-item .dt { font-size: 12.5px; color: var(--text-dim); margin-top: 2px; }
 .stretch-item .du { font-size: 11px; color: var(--text-faint); font-weight: 700; margin-left: auto; flex-shrink: 0; white-space: nowrap; }
+
+/* ---------- equipment / gym ---------- */
+.eq-flag { font-size: 10.5px; font-weight: 800; color: #f5a623; letter-spacing: .2px; white-space: nowrap; }
+.ex-card.missing { border-color: rgba(245,166,35,.45); }
+.gym-row { display: flex; align-items: center; gap: 12px; padding: 13px 2px; border-bottom: 1px solid var(--line); font-size: 15px; font-weight: 600; cursor: pointer; }
+.gym-row input { width: 21px; height: 21px; flex-shrink: 0; accent-color: var(--accent); }

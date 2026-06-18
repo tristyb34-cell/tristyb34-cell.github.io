@@ -124,11 +124,11 @@ async function paintToday(root) {
   const startBtn = root.querySelector('#start');
   if (startBtn) startBtn.addEventListener('click', () => renderSession(root, day));
   const previewBtn = root.querySelector('#preview');
-  if (previewBtn) previewBtn.addEventListener('click', () => openDayPreview(root, day, () => paintToday(root)));
+  if (previewBtn) previewBtn.addEventListener('click', () => openDayPreview(root, day.dow, () => paintToday(root)));
   const previewNext = root.querySelector('#preview-next');
   if (previewNext) {
     const nt = nextTrainingDay(plan);
-    previewNext.addEventListener('click', () => openDayPreview(root, nt ? nt.day : null, () => paintToday(root)));
+    if (nt) previewNext.addEventListener('click', () => openDayPreview(root, nt.day.dow, () => paintToday(root)));
   }
   root.querySelector('#edit').addEventListener('click', () => openEditor(root));
   root.querySelector('#calis').addEventListener('click', () => openSkillTree(root));
