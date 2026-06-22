@@ -550,6 +550,33 @@ h1.screen-title { font-size: 30px; font-weight: 850; line-height: 1.05; margin-b
 .seg.col .seg-btn { padding: 13px; }
 #onboard .btn, #review .btn { margin-top: 20px; }
 
+/* protein game-plan picker (modal sheet) */
+.overlay-sheet {
+  position: fixed; inset: 0; z-index: 120; background: var(--bg); overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  transform: translateY(100%); transition: transform .25s var(--ease);
+}
+.overlay-sheet.show { transform: none; }
+.sheet-inner { max-width: 520px; margin: 0 auto; padding: calc(var(--safe-top) + 28px) 20px calc(var(--safe-bot) + 30px); }
+.overlay-sheet .btn { margin-top: 20px; }
+.gp-list { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.gp-item {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  min-height: 48px; padding: 12px 14px; border-radius: var(--r-sm);
+  border: 2px solid var(--line); background: var(--surface-2); color: var(--text);
+  font-weight: 600; font-size: 15px; line-height: 1.4;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color .15s var(--ease), background .15s var(--ease);
+}
+.gp-item[aria-pressed="true"] { border-color: var(--accent); background: var(--surface); }
+.gp-check { flex-shrink: 0; width: 24px; height: 24px; border-radius: 7px; border: 2px solid var(--line); display: inline-flex; align-items: center; justify-content: center; font-weight: 900; color: var(--accent-ink); }
+.gp-item[aria-pressed="true"] .gp-check { background: var(--grad); border-color: var(--accent); }
+.gp-item[aria-pressed="true"] .gp-check::before { content: "\2713"; }
+.gp-item:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+.gp-active { list-style: none; padding: 0; margin: 0 0 12px; display: flex; flex-direction: column; gap: 8px; }
+.gp-active li { font-size: 13.5px; line-height: 1.45; padding-left: 18px; position: relative; }
+.gp-active li::before { content: "→"; position: absolute; left: 0; color: var(--accent); font-weight: 800; }
+
 /* ============================================================
    Phase 5 — skill tree, re-entry
    ============================================================ */

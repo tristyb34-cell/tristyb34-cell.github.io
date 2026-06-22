@@ -13,6 +13,16 @@ import { getReentry } from '../reentry.js';
 import { treeUnlocked, TREE_UNLOCK_AT } from '../skills.js';
 import { openSkillTree } from '../skilltree.js';
 import { reminderSettings, enable as enableNotify, disable as disableNotify, fireDueReminders } from '../notify.js';
+import { getGamePlan, planText, openGamePlan } from '../gameplan.js';
+
+// strip a session to its big lifts so a "can't be bothered" day still happens
+function quickVersion(day) {
+  return {
+    ...day,
+    title: `${day.title} · quick`,
+    items: day.items.slice(0, 3).map(it => ({ ...it, sets: Math.min(2, it.sets) })),
+  };
+}
 
 const daysBetween = (iso, now) => (now - new Date(iso + 'T00:00:00')) / 86400000;
 
@@ -43,6 +53,7 @@ async function paintToday(root) {
   const reviewDue = ctx.totalWorkouts >= 8 && (!lastReview || daysBetween(lastReview, ctx.now) >= 30);
   const re = await getReentry();
   const treeOpen = treeUnlocked(ctx.totalWorkouts);
+  const gp = await getGamePlan();
 
   const reentryHtml = re.active
     ? `<div class="nudge reentry-nudge"><span class="nudge-ic">🛡️</span><span>${re.notStarted
@@ -71,6 +82,17 @@ async function paintToday(root) {
   const nudgeHtml = nudges(ctx).map(n =>
     `<div class="nudge"><span class="nudge-ic">${n.icon}</span><span>${n.text}</span></div>`).join('');
   const reviewHtml = reviewDue ? `<div class="nudge action-nudge"><span class="nudge-ic">📋</span><span>Your monthly review is ready. See the month in one place.</span><button class="mini-btn" id="open-review">Open</button></div>` : '';
+  const gameplanHtml = `
+    <div class="section-label">Protein game plan</div>
+    ${gp.length
+      ? `<div class="card gp-card">
+          <ul class="gp-active">${gp.map(id => `<li>${planText(id)}</li>`).join('')}</ul>
+          <button class="btn ghost" id="gp-edit" aria-haspopup="dialog">Edit my plan</button>
+        </div>`
+      : `<div class="card">
+          <p class="lead" style="margin-bottom:12px;">Willpower fades, a plan doesn’t. Set a few if-then rules and you’ll hit protein without thinking about it.</p>
+          <button class="btn" id="gp-edit" aria-haspopup="dialog">Set my protein game plan</button>
+        </div>`}`;
   const backupHtml = backupDue ? `<div class="nudge action-nudge"><span class="nudge-ic">💾</span><span>You’ve got real data now. Back it up so it can never vanish.</span><button class="mini-btn" id="do-backup">Back up</button></div>` : '';
 
   let mid;
@@ -90,6 +112,7 @@ async function paintToday(root) {
       </div>
       <button class="btn" id="start">${continuing ? '▶︎ Continue workout' : '⚡ Start workout'}</button>
       <div style="height:10px;"></div>
+      ${continuing ? '' : '<button class="btn ghost" id="quick">😮‍💨 Can’t be bothered? Give me the 15-min version</button><div style="height:10px;"></div>'}
       <button class="btn ghost" id="edit">✎ Edit my plan</button>
       <div class="commandment"><span class="num">${c.num}.</span><em>${c.text}</em></div>`;
   } else {
@@ -119,11 +142,15 @@ async function paintToday(root) {
       <button class="btn ghost" id="edit">✎ Edit my plan</button>`;
   }
 
-  root.innerHTML = coachHtml + reentryHtml + adaptiveHtml + reviewHtml + backupHtml + nudgeHtml + mid + calisHtml + remindersCard(rem);
+  root.innerHTML = coachHtml + reentryHtml + adaptiveHtml + reviewHtml + backupHtml + nudgeHtml + mid + gameplanHtml + calisHtml + remindersCard(rem);
 
   // wiring
   const startBtn = root.querySelector('#start');
   if (startBtn) startBtn.addEventListener('click', () => renderSession(root, day));
+  const quickBtn = root.querySelector('#quick');
+  if (quickBtn) quickBtn.addEventListener('click', () => renderSession(root, quickVersion(day)));
+  const gpEdit = root.querySelector('#gp-edit');
+  if (gpEdit) gpEdit.addEventListener('click', () => openGamePlan(gpEdit, () => paintToday(root)));
   const todayCard = root.querySelector('#today-card');
   if (todayCard) todayCard.addEventListener('click', () => openDayPreview(root, day.dow, () => paintToday(root)));
   const nextCard = root.querySelector('#nextup-card');
