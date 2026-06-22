@@ -409,6 +409,19 @@ h1.screen-title { font-size: 30px; font-weight: 850; line-height: 1.05; margin-b
 .size-btn { flex: 1; padding: 9px; border-radius: 9px; border: 1px solid var(--line); background: var(--bg); color: var(--text-dim); font-weight: 700; font-size: 13px; }
 .size-btn.active { background: var(--surface-2); color: var(--text); border-color: var(--accent); }
 
+/* treats — tap to log the sneaky stuff */
+.treat-coach { margin-bottom: 10px; }
+.treat-grid { display: flex; flex-direction: column; gap: 8px; }
+.treat-card { display: flex; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; transition: border-color .2s; }
+.treat-card.logged { border-color: var(--accent); }
+.treat-add { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; text-align: left; background: none; border: none; padding: 12px 14px; min-height: 44px; }
+.treat-emoji { font-size: 22px; line-height: 1; flex-shrink: 0; }
+.treat-name { font-weight: 700; font-size: 14px; flex: 1; min-width: 0; }
+.treat-macros { font-size: 12px; color: var(--text-faint); font-weight: 700; flex-shrink: 0; }
+.treat-minus { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; margin-left: 12px; flex-shrink: 0; background: none; border: none; color: var(--text-dim); font-size: 22px; font-weight: 800; }
+.treat-n { padding-right: 14px; font-weight: 800; font-size: 14px; color: var(--accent); flex-shrink: 0; }
+.treat-add:focus-visible, .treat-minus:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
 /* shopping */
 .shop-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 

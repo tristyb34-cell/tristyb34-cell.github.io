@@ -1,6 +1,7 @@
 import {
-  MEALS, DINNER_SIZES, SHOPPING, SHOPPING_TOTAL,
+  MEALS, DINNER_SIZES, SHOPPING, SHOPPING_TOTAL, TREATS,
   getDayLog, toggleMeal, setDinnerSize, mealMacros, dayTotals,
+  addTreat, removeTreat,
 } from '../nutrition.js';
 import { getTargets } from '../profile.js';
 import { getScheduleByKind, updateItem, resetSchedule } from '../schedule.js';
@@ -90,6 +91,19 @@ function coachLine(cal, protein) {
   return `${calLeft} cal and ${Math.max(0, pLeft)}g protein still to eat today.`;
 }
 
+// The verdict on a snack depends on WHERE you are today, not the snack.
+// DAX already knows your protein, your meals and the time — so it can call it.
+function treatCoachLine(log, protein) {
+  const hour = new Date().getHours();
+  const dinnerDone = !!log.dinner;
+  const pLeft = TARGET.protein - protein;
+  if (!dinnerDone && hour >= 15 && hour < 20)
+    return 'Pre-dinner zone: don’t let a snack kill your appetite. Eat the real meal first. 🍽️';
+  if (pLeft > 25)
+    return `Protein’s at ${Math.round(protein)}/${TARGET.protein}g. Hit that first, then the treat’s free. 🧱`;
+  return 'Rent’s paid — protein and meals are in. This is bonus surplus, enjoy it. ✅';
+}
+
 function renderToday(body, log) {
   const { cal, protein } = dayTotals(log);
 
@@ -123,6 +137,28 @@ function renderToday(body, log) {
             </div>` : ''}
         </div>`;
     }).join('')}
+
+    <div class="section-label">Treats · log the sneaky stuff, no guilt</div>
+    <p class="coach-last treat-coach">${treatCoachLine(log, protein)}</p>
+    <div class="treat-grid">
+      ${TREATS.map(t => {
+        const n = (log.treats && log.treats[t.id]) || 0;
+        return `
+          <div class="treat-card ${n ? 'logged' : ''}">
+            <button class="treat-add" data-treat="${t.id}"
+              aria-label="Add ${t.name}, ${t.cal} calories.${n > 0 ? ` Logged ${n}.` : ''}">
+              <span class="treat-emoji" aria-hidden="true">${t.emoji}</span>
+              <span class="treat-name">${t.name}</span>
+              <span class="treat-macros">${t.cal} cal · ${t.protein}g</span>
+            </button>
+            ${n > 0 ? `
+              <button class="treat-minus" data-treat="${t.id}" aria-label="Remove one ${t.name}, ${n} logged">
+                <span aria-hidden="true">−</span>
+              </button>
+              <span class="treat-n" aria-hidden="true">×${n}</span>` : ''}
+          </div>`;
+      }).join('')}
+    </div>
   `;
 
   const root = body.closest('.view');
@@ -133,6 +169,14 @@ function renderToday(body, log) {
   body.querySelectorAll('.size-btn').forEach(b => b.addEventListener('click', async (e) => {
     e.stopPropagation();
     await setDinnerSize(b.dataset.size);
+    paint(root);
+  }));
+  body.querySelectorAll('.treat-add').forEach(b => b.addEventListener('click', async () => {
+    await addTreat(b.dataset.treat);
+    paint(root);
+  }));
+  body.querySelectorAll('.treat-minus').forEach(b => b.addEventListener('click', async () => {
+    await removeTreat(b.dataset.treat);
     paint(root);
   }));
 }
@@ -157,6 +201,7 @@ function renderMenu(body) {
         <div class="meal-macros">${m.cal} cal · ${m.protein}g protein${m.dinner ? ' (medium)' : ''}</div>
       </div>`).join('')}
     <div class="card"><p class="lead"><strong>No blender yet?</strong> Make the smoothie as overnight oats: same ingredients in a tub in the fridge, no equipment.</p></div>
+    <div class="card"><p class="lead"><strong>How treats work for you 🍟</strong> Your meals pay the rent: protein and quality calories. Snacks are spending money. Hit your meals and protein first and a packet of chips is just bonus surplus, not a setback. It only bites you if junk <em>replaces</em> a meal or kills your appetite for dinner. You’re bulking, not cutting, so relax and log it.</p></div>
   `;
 }
 

@@ -28,6 +28,16 @@ export const MEALS = [
     desc: 'Whatever’s cooked at home, bigger portion + extra carbs (rice/potato).', cal: 750, protein: 42 },
 ];
 
+// The sneaky stuff. Rough macros — close enough, no counting.
+// Low protein, real calories: fine as bonus surplus once meals are in.
+export const TREATS = [
+  { id: 'chips', emoji: '🍟', name: 'Chips / crisps', desc: 'A packet (~50g)', cal: 270, protein: 3 },
+  { id: 'sweets', emoji: '🍬', name: 'Sweets / lollies', desc: 'A handful or small bag', cal: 200, protein: 0 },
+  { id: 'chocolate', emoji: '🍫', name: 'Chocolate', desc: 'A slab or bar', cal: 250, protein: 4 },
+  { id: 'biscuits', emoji: '🍪', name: 'Biscuits / baked', desc: 'A few biscuits or a pastry', cal: 230, protein: 3 },
+  { id: 'fizzy', emoji: '🥤', name: 'Fizzy drink', desc: 'A can of soft drink', cal: 150, protein: 0 },
+];
+
 export const SHOPPING = [
   { item: 'Whey protein (1 tub, local brand)', cost: 450, why: 'Your #1 buy. Easiest way to hit protein when you can’t eat enough.' },
   { item: 'Creatine monohydrate', cost: 180, why: 'Most proven supplement on earth. 5g daily, forever. Lasts ~2 months.' },
@@ -68,6 +78,41 @@ export async function setDinnerSize(size) {
   return day;
 }
 
+/* ---------- treats (multiple per day, counted) ---------- */
+export async function addTreat(treatId) {
+  const date = todayKey();
+  const logs = await allLogs();
+  const day = logs[date] || {};
+  const treats = day.treats || {};
+  treats[treatId] = (treats[treatId] || 0) + 1;
+  day.treats = treats;
+  logs[date] = day;
+  await db.set('foodlog', logs);
+  return day;
+}
+
+export async function removeTreat(treatId) {
+  const date = todayKey();
+  const logs = await allLogs();
+  const day = logs[date] || {};
+  const treats = day.treats || {};
+  if (treats[treatId]) { treats[treatId] -= 1; if (treats[treatId] <= 0) delete treats[treatId]; }
+  day.treats = treats;
+  logs[date] = day;
+  await db.set('foodlog', logs);
+  return day;
+}
+
+export function treatTotals(log) {
+  let cal = 0, protein = 0;
+  const treats = (log && log.treats) || {};
+  for (const t of TREATS) {
+    const n = treats[t.id] || 0;
+    if (n) { cal += t.cal * n; protein += t.protein * n; }
+  }
+  return { cal, protein };
+}
+
 export function mealMacros(meal, log) {
   if (meal.dinner) {
     const size = (log && log.dinner) || 'med';
@@ -82,5 +127,6 @@ export function dayTotals(log) {
   for (const meal of MEALS) {
     if (log[meal.id]) { const m = mealMacros(meal, log); cal += m.cal; protein += m.protein; }
   }
-  return { cal, protein };
+  const t = treatTotals(log);
+  return { cal: cal + t.cal, protein: protein + t.protein };
 }
