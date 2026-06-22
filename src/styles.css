@@ -443,6 +443,14 @@ h1.screen-title { font-size: 30px; font-weight: 850; line-height: 1.05; margin-b
 .treat-n { padding-right: 14px; font-weight: 800; font-size: 14px; color: var(--accent); flex-shrink: 0; }
 .treat-add:focus-visible, .treat-minus:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
+/* creatine streak + food-quality nudge */
+.cre-card { display: flex; align-items: center; gap: 14px; }
+.cre-flame { font-size: 26px; line-height: 1; flex-shrink: 0; }
+.cre-streak { font-size: 22px; font-weight: 850; line-height: 1.1; }
+.cre-sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+.quality-add { color: var(--accent); margin-top: 6px; }
+.quality-good { color: var(--good); margin-top: 6px; }
+
 /* weekly volume per muscle */
 .vol-card .vol-row:last-of-type { margin-bottom: 4px; }
 .vol-row { display: grid; grid-template-columns: 82px 1fr 54px; gap: 10px; align-items: center; margin-bottom: 11px; }

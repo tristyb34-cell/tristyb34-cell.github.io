@@ -17,16 +17,18 @@ export const DINNER_SIZES = {
 export const MEALS = [
   { id: 'smoothie', slot: 'Morning', emoji: '🥤', name: 'The Growth Smoothie',
     desc: '80g oats · 400ml full-cream milk · 1 tbsp peanut butter · 1 banana · 1 scoop whey · 5g creatine',
-    cal: 880, protein: 52 },
+    cal: 880, protein: 52, fibre: 11 },
   { id: 'eggs', slot: 'Mid-morning', emoji: '🥚', name: '3 Boiled Eggs',
-    desc: 'Batch-boil 6–9 at once, they keep 5 days. Grab and go.', cal: 210, protein: 18 },
+    desc: 'Batch-boil 6–9 at once, they keep 5 days. Grab and go.', cal: 210, protein: 18, fibre: 0 },
   { id: 'lunch', slot: 'Lunch', emoji: '🥪', name: 'Tuna Sandwich / Leftovers',
-    desc: 'Tuna mayo on wholewheat, or last night’s dinner + a Greek yoghurt.', cal: 550, protein: 45 },
+    desc: 'Tuna mayo on wholewheat, or last night’s dinner + a Greek yoghurt.', cal: 550, protein: 45, fibre: 6 },
   { id: 'snack', slot: 'Afternoon / pre-gym', emoji: '🍌', name: 'PB & Honey + Banana',
-    desc: 'Quick calories before training.', cal: 450, protein: 14 },
+    desc: 'Quick calories before training.', cal: 450, protein: 14, fibre: 5 },
   { id: 'dinner', slot: 'Dinner', emoji: '🍽️', name: 'Home Dinner', dinner: true,
-    desc: 'Whatever’s cooked at home, bigger portion + extra carbs (rice/potato).', cal: 750, protein: 42 },
+    desc: 'Whatever’s cooked at home, bigger portion + extra carbs (rice/potato).', cal: 750, protein: 42, fibre: 8 },
 ];
+
+export const FIBRE_TARGET = 30; // g/day — general health guideline, his best food-quality proxy
 
 // The sneaky stuff. Rough macros — close enough, no counting.
 // Low protein, real calories: fine as bonus surplus once meals are in.
@@ -117,16 +119,42 @@ export function mealMacros(meal, log) {
   if (meal.dinner) {
     const size = (log && log.dinner) || 'med';
     const s = DINNER_SIZES[size] || DINNER_SIZES.med;
-    return { cal: s.cal, protein: s.protein };
+    return { cal: s.cal, protein: s.protein, fibre: meal.fibre || 0 };
   }
-  return { cal: meal.cal, protein: meal.protein };
+  return { cal: meal.cal, protein: meal.protein, fibre: meal.fibre || 0 };
 }
 
 export function dayTotals(log) {
-  let cal = 0, protein = 0;
+  let cal = 0, protein = 0, fibre = 0;
   for (const meal of MEALS) {
-    if (log[meal.id]) { const m = mealMacros(meal, log); cal += m.cal; protein += m.protein; }
+    if (log[meal.id]) { const m = mealMacros(meal, log); cal += m.cal; protein += m.protein; fibre += m.fibre; }
   }
   const t = treatTotals(log);
-  return { cal: cal + t.cal, protein: protein + t.protein };
+  return { cal: cal + t.cal, protein: protein + t.protein, fibre };
+}
+
+/* Creatine streak — auto-derived from the morning smoothie (creatine lives in it).
+   Zero taps: log your smoothie, the streak takes care of itself. */
+export async function creatineStreak(now = new Date()) {
+  const logs = await allLogs();
+  const key = (dt) => dt.toISOString().slice(0, 10);
+  const has = (dt) => !!(logs[key(dt)] && logs[key(dt)].smoothie);
+  const todayDone = has(now);
+  let streak = 0;
+  const cursor = new Date(now);
+  // today not logged yet shouldn't break the chain — start from yesterday in that case
+  if (!todayDone) cursor.setDate(cursor.getDate() - 1);
+  while (has(cursor)) { streak++; cursor.setDate(cursor.getDate() - 1); }
+  return { streak, todayDone };
+}
+
+/* Surplus-blind food-quality nudge: ONLY ever suggests adding, never cutting.
+   He needs the calories; this just steers them toward quality. */
+export function qualitySignal(totals, targets) {
+  if (!totals.cal) return null;
+  if (targets.protein - totals.protein > 25)
+    return { tone: 'add', text: 'Quality check: protein’s light. Add an egg or a Greek yoghurt.' };
+  if (FIBRE_TARGET - (totals.fibre || 0) > 12)
+    return { tone: 'add', text: 'Quality check: low on fibre. Add fruit, oats or veg, don’t cut anything.' };
+  return { tone: 'good', text: 'Quality check: protein and fibre both solid. Clean fuel today.' };
 }

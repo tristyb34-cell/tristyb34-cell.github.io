@@ -1,7 +1,7 @@
 import {
-  MEALS, DINNER_SIZES, SHOPPING, SHOPPING_TOTAL, TREATS,
+  MEALS, DINNER_SIZES, SHOPPING, SHOPPING_TOTAL, TREATS, FIBRE_TARGET,
   getDayLog, toggleMeal, setDinnerSize, mealMacros, dayTotals,
-  addTreat, removeTreat,
+  addTreat, removeTreat, creatineStreak, qualitySignal,
 } from '../nutrition.js';
 import { getTargets } from '../profile.js';
 import { getScheduleByKind, updateItem, resetSchedule } from '../schedule.js';
@@ -30,7 +30,7 @@ async function paint(root) {
   root.querySelectorAll('.seg-btn').forEach(b => b.addEventListener('click', () => { sub = b.dataset.sub; paint(root); }));
 
   const body = root.querySelector('#fuel-body');
-  if (sub === 'today') renderToday(body, log);
+  if (sub === 'today') renderToday(body, log, await creatineStreak());
   else if (sub === 'menu') renderMenu(body);
   else if (sub === 'times') await renderSchedule(body, root);
   else renderShopping(body);
@@ -104,15 +104,27 @@ function treatCoachLine(log, protein) {
   return 'Rent’s paid — protein and meals are in. This is bonus surplus, enjoy it. ✅';
 }
 
-function renderToday(body, log) {
-  const { cal, protein } = dayTotals(log);
+function creatineCard(cre) {
+  const inner = cre.streak === 0
+    ? `<div class="cre-streak">Start it</div><div class="cre-sub">Log your morning smoothie to begin your creatine streak.</div>`
+    : `<div class="cre-streak">${cre.streak} day${cre.streak === 1 ? '' : 's'}</div><div class="cre-sub">Creatine streak ${cre.todayDone ? '· today done ✓' : '· log your smoothie to keep it alive'}</div>`;
+  return `<div class="card cre-card"><span class="cre-flame" aria-hidden="true">🔥</span><div class="cre-body">${inner}</div></div>`;
+}
+
+function renderToday(body, log, cre) {
+  const { cal, protein, fibre } = dayTotals(log);
+  const quality = qualitySignal({ cal, protein, fibre }, TARGET);
 
   body.innerHTML = `
     <div class="card card-hero">
       ${bar('Calories', cal, TARGET.cal, '')}
       ${bar('Protein', protein, TARGET.protein, 'g')}
+      ${bar('Fibre', fibre, FIBRE_TARGET, 'g')}
       <p class="coach-last" style="margin-top:12px;">${coachLine(cal, protein)}</p>
+      ${quality ? `<p class="coach-last quality-${quality.tone}">${quality.text}</p>` : ''}
     </div>
+
+    ${creatineCard(cre)}
 
     <div class="section-label">Today’s plate · tap when eaten</div>
     ${MEALS.map(meal => {
