@@ -46,8 +46,10 @@ async function paintToday(root) {
 
   const reentryHtml = re.active
     ? `<div class="nudge reentry-nudge"><span class="nudge-ic">🛡️</span><span>${re.notStarted
-        ? 'Re-entry mode: your first 3 weeks ramp gently. Muscles remember fast, tendons don’t. Ego later.'
-        : `Re-entry · week ${re.week} of 3. Weights held, form first. ${re.daysLeft} days to full intensity.`}</span></div>`
+        ? 'Tendon block: a 6-week ramp. Muscles remember in weeks, tendons take months. Ego later.'
+        : re.holdLoad
+          ? `Tendon block · week ${re.week} of ${re.totalWeeks}. Weights held, form first. Your tissue is catching up to your strength.`
+          : `Tendon block · week ${re.week} of ${re.totalWeeks}. Climbing now, but stay honest, ${re.daysLeft} days till the brakes are fully off.`}</span></div>`
     : '';
   const calisHtml = `
     <div class="section-label">Calisthenics</div>

@@ -108,7 +108,7 @@ export async function suggestion(item) {
     return {
       headline: re.active ? 'First time · ease in' : 'First time',
       detail: re.active
-        ? `You’re in re-entry (week ${re.week} of 3). Go lighter than your ego wants, leave 3 reps in the tank. Tendons before weight.`
+        ? `You’re in the tendon block (week ${re.week} of ${re.totalWeeks}). Go lighter than your ego wants, leave 3 reps in the tank. Tendons before weight.`
         : `Pick a weight you could do for about ${item.reps} with 2 reps left in the tank. We build from there.`,
       last: null, suggestedWeight: null,
     };
@@ -122,9 +122,9 @@ export async function suggestion(item) {
   const rirs = last.sets.map(s => s.rir).filter(v => v !== null && v !== undefined);
   const minRir = rirs.length ? Math.min(...rirs) : null;
 
-  // re-entry caps the load: hold weight, build reps and connective tissue first
-  if (re.active && ex.type === 'weight') {
-    return { headline: `Hold ${topW}kg · re-entry`, detail: `Week ${re.week} of 3. Don’t chase weight yet, your muscles are ready but your tendons aren’t. Same load, clean reps.`, last, lastStr, suggestedWeight: topW };
+  // tendon block weeks 1-2: hard hold on load, build reps and connective tissue first
+  if (re.holdLoad && ex.type === 'weight') {
+    return { headline: `Hold ${topW}kg · tendon block`, detail: `Week ${re.week} of ${re.totalWeeks}. Don’t chase weight yet, your muscles are ready but your tendons aren’t. Same load, clean reps.`, last, lastStr, suggestedWeight: topW };
   }
 
   if (ex.type === 'weight') {
