@@ -14,6 +14,7 @@ import { treeUnlocked, TREE_UNLOCK_AT } from '../skills.js';
 import { openSkillTree } from '../skilltree.js';
 import { reminderSettings, enable as enableNotify, disable as disableNotify, fireDueReminders } from '../notify.js';
 import { getGamePlan, planText, openGamePlan } from '../gameplan.js';
+import { openWeeklyReview } from '../weekreview.js';
 
 // strip a session to its big lifts so a "can't be bothered" day still happens
 function quickVersion(day) {
@@ -49,8 +50,10 @@ async function paintToday(root) {
   const photos = (await db.get('photos', [])) || [];
   const lastBackup = await db.get('lastBackup', null);
   const lastReview = await db.get('lastReview', null);
+  const lastWeekReview = await db.get('lastWeekReview', null);
   const backupDue = (ctx.totalWorkouts >= 5 || photos.length > 0) && (!lastBackup || daysBetween(lastBackup, ctx.now) >= 14);
   const reviewDue = ctx.totalWorkouts >= 8 && (!lastReview || daysBetween(lastReview, ctx.now) >= 30);
+  const weekReviewDue = ctx.totalWorkouts >= 3 && (!lastWeekReview || daysBetween(lastWeekReview, ctx.now) >= 7);
   const re = await getReentry();
   const treeOpen = treeUnlocked(ctx.totalWorkouts);
   const gp = await getGamePlan();
@@ -82,6 +85,7 @@ async function paintToday(root) {
   const nudgeHtml = nudges(ctx).map(n =>
     `<div class="nudge"><span class="nudge-ic">${n.icon}</span><span>${n.text}</span></div>`).join('');
   const reviewHtml = reviewDue ? `<div class="nudge action-nudge"><span class="nudge-ic">📋</span><span>Your monthly review is ready. See the month in one place.</span><button class="mini-btn" id="open-review">Open</button></div>` : '';
+  const weekReviewHtml = weekReviewDue ? `<div class="nudge action-nudge"><span class="nudge-ic">📅</span><span>Your week in review is ready, see the last 7 days.</span><button class="mini-btn" id="open-weekreview">Open</button></div>` : '';
   const gameplanHtml = `
     <div class="section-label">Protein game plan</div>
     ${gp.length
@@ -142,7 +146,7 @@ async function paintToday(root) {
       <button class="btn ghost" id="edit">✎ Edit my plan</button>`;
   }
 
-  root.innerHTML = coachHtml + reentryHtml + adaptiveHtml + reviewHtml + backupHtml + nudgeHtml + mid + gameplanHtml + calisHtml + remindersCard(rem);
+  root.innerHTML = coachHtml + reentryHtml + adaptiveHtml + weekReviewHtml + reviewHtml + backupHtml + nudgeHtml + mid + gameplanHtml + calisHtml + remindersCard(rem);
 
   // wiring
   const startBtn = root.querySelector('#start');
@@ -162,6 +166,8 @@ async function paintToday(root) {
   root.querySelector('#calis').addEventListener('click', () => openSkillTree(root));
   const rv = root.querySelector('#open-review');
   if (rv) rv.addEventListener('click', () => openReview(root));
+  const wrv = root.querySelector('#open-weekreview');
+  if (wrv) wrv.addEventListener('click', () => openWeeklyReview(root, wrv));
   const bk = root.querySelector('#do-backup');
   if (bk) bk.addEventListener('click', async () => {
     const json = await exportBackup();
