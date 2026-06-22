@@ -4,7 +4,7 @@
    ============================================================ */
 import { LIBRARY } from './program.js';
 import { WARMUP, COOLDOWN } from './data.js';
-import { startActive, getActive, logSet, finishActive, suggestion } from './workouts.js';
+import { startActive, getActive, logSet, finishActive, suggestion, setEffort } from './workouts.js';
 
 const stretchList = (items) => `<div class="stretch-list">${items.map(s =>
   `<div class="stretch-item"><span class="stretch-dot">›</span><div><div class="nm">${s.name}</div><div class="dt">${s.detail}</div></div><span class="du">${s.dur}</span></div>`).join('')}</div>`;
@@ -92,6 +92,10 @@ async function openExercise(idx) {
   const sug = await suggestion(item);
   const logged = S.active.log[item.id] || [];
 
+  // preselect the effort rating if every logged set already shares one
+  const rirVals = logged.filter(Boolean).map(s => s.rir).filter(v => v !== null && v !== undefined);
+  const curRir = rirVals.length && rirVals.every(v => v === rirVals[0]) ? rirVals[0] : null;
+
   const showWeight = ex.type === 'weight';
   const repLabel = ex.type === 'timed' ? 'secs' : 'reps';
 
@@ -128,6 +132,17 @@ async function openExercise(idx) {
       }).join('')}
     </div>
 
+    ${ex.type !== 'timed' ? `
+    <div class="effort" role="group" aria-labelledby="effort-q">
+      <div class="effort-q" id="effort-q">How hard was that? <span class="effort-opt">optional</span></div>
+      <div class="effort-btns">
+        ${[['3', 'Easy'], ['1', 'Solid'], ['0', 'All-out']].map(([v, l]) => {
+          const on = curRir === Number(v);
+          return `<button type="button" class="effort-btn ${on ? 'selected' : ''}" data-rir="${v}" aria-pressed="${on}">${l}</button>`;
+        }).join('')}
+      </div>
+    </div>` : ''}
+
     <details class="howto">
       <summary>How to do it</summary>
       <ol>${ex.cues.map(c => `<li>${c}</li>`).join('')}</ol>
@@ -151,6 +166,18 @@ async function openExercise(idx) {
   S.root.querySelector('#to-overview').addEventListener('click', renderOverview);
   S.root.querySelectorAll('.set-check').forEach(btn =>
     btn.addEventListener('click', () => checkSet(item, ex, Number(btn.dataset.set))));
+
+  S.root.querySelectorAll('.effort-btn').forEach(btn =>
+    btn.addEventListener('click', async () => {
+      const wasSelected = btn.getAttribute('aria-pressed') === 'true';
+      await setEffort(item.id, wasSelected ? null : Number(btn.dataset.rir));
+      S.active = await getActive();
+      S.root.querySelectorAll('.effort-btn').forEach(b => {
+        const on = !wasSelected && b === btn;
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        b.classList.toggle('selected', on);
+      });
+    }));
 }
 
 async function checkSet(item, ex, i) {

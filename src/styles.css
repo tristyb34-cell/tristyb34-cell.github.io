@@ -260,6 +260,27 @@ h1.screen-title { font-size: 30px; font-weight: 850; line-height: 1.05; margin-b
 .set-row.shake { animation: shake .35s; }
 @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
 
+/* optional "how hard was that" effort rating (reps-in-reserve), one tap per exercise */
+.effort { margin-top: 14px; }
+.effort-q { font-size: 13px; color: var(--text-dim); font-weight: 700; margin-bottom: 8px; }
+.effort-opt { color: var(--text-faint); font-weight: 600; font-size: 12px; }
+.effort-btns { display: flex; gap: 10px; }
+.effort-btn {
+  flex: 1; min-height: 48px; min-width: 48px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 12px 8px; border-radius: var(--r-sm);
+  border: 2px solid var(--line); background: var(--surface-2);
+  color: var(--text-dim); font-weight: 700; font-size: 16px;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color .15s var(--ease), background .15s var(--ease);
+}
+.effort-btn[aria-pressed="true"] {
+  background: var(--grad); color: var(--accent-ink); border-color: var(--accent);
+}
+.effort-btn[aria-pressed="true"]::after { content: "\2713"; margin-left: 6px; font-weight: 900; }
+.effort-btn:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; box-shadow: 0 0 0 4px rgba(13,14,18,.9); }
+@media (prefers-reduced-motion: reduce) { .effort-btn { transition: none; } }
+
 /* how-to */
 .howto { margin-top: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 4px 16px; }
 .howto summary { padding: 12px 0; font-weight: 700; cursor: pointer; color: var(--text-dim); }

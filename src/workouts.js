@@ -29,14 +29,40 @@ export async function startActive(workout) {
   await db.set('active', active);
   return active;
 }
-export async function logSet(exId, setIndex, weight, reps) {
+export async function logSet(exId, setIndex, weight, reps, rir = null) {
   const a = await getActive();
   if (!a) return null;
   a.log[exId] = a.log[exId] || [];
-  a.log[exId][setIndex] = { weight: weight === '' ? null : Number(weight), reps: Number(reps) || 0 };
+  a.log[exId][setIndex] = {
+    weight: weight === '' ? null : Number(weight),
+    reps: Number(reps) || 0,
+    rir: (rir === null || rir === '') ? null : Number(rir),
+  };
   await db.set('active', a);
   return a;
 }
+
+/* Estimated 1-rep-max (Epley), honest about reps left in the tank.
+   A set stopped with 2 in reserve is really a heavier set than the bar says. */
+export function e1rm(weight, reps, rir = 0) {
+  if (!weight || !reps) return 0;
+  const effReps = reps + (rir || 0);
+  return weight * (1 + effReps / 30);
+}
+export function bestE1rm(entry) {
+  return Math.max(0, ...entry.sets.map(s => e1rm(s.weight || 0, s.reps || 0, s.rir || 0)));
+}
+// Optional, one tap per exercise: stamp the same reps-in-reserve on every
+// logged set of that exercise. easy=3, solid=1, all-out=0. Skippable.
+export async function setEffort(exId, rir) {
+  const a = await getActive();
+  if (!a || !a.log[exId]) return null;
+  const val = (rir === null || rir === '') ? null : Number(rir);
+  a.log[exId] = a.log[exId].map(s => (s ? { ...s, rir: val } : s));
+  await db.set('active', a);
+  return a;
+}
+
 export async function finishActive() {
   const a = await getActive();
   if (!a) return null;
@@ -92,15 +118,27 @@ export async function suggestion(item) {
   const hitAll = last.sets.length >= item.sets && last.sets.every(s => (s.reps || 0) >= hi);
   const lastStr = last.sets.map(s => (s.weight ? `${s.weight}kg×${s.reps}` : `${s.reps}`)).join(', ');
 
+  // hardest set's reps-in-reserve last time (null if he never logged RIR)
+  const rirs = last.sets.map(s => s.rir).filter(v => v !== null && v !== undefined);
+  const minRir = rirs.length ? Math.min(...rirs) : null;
+
   // re-entry caps the load: hold weight, build reps and connective tissue first
   if (re.active && ex.type === 'weight') {
     return { headline: `Hold ${topW}kg · re-entry`, detail: `Week ${re.week} of 3. Don’t chase weight yet, your muscles are ready but your tendons aren’t. Same load, clean reps.`, last, lastStr, suggestedWeight: topW };
   }
 
   if (ex.type === 'weight') {
-    return hitAll
-      ? { headline: `Go heavier → ${topW + 2.5}kg`, detail: `You hit the top of the range at ${topW}kg last time. Add 2.5kg.`, last, lastStr, suggestedWeight: topW + 2.5 }
-      : { headline: `Beat ${topW}kg`, detail: `Same weight, more reps than last time. Then the weight goes up.`, last, lastStr, suggestedWeight: topW };
+    if (hitAll) {
+      const detail = minRir !== null && minRir >= 2
+        ? `You topped the range at ${topW}kg with ~${minRir} left in the tank. Add 2.5kg, maybe more.`
+        : `You hit the top of the range at ${topW}kg last time. Add 2.5kg.`;
+      return { headline: `Go heavier → ${topW + 2.5}kg`, detail, last, lastStr, suggestedWeight: topW + 2.5 };
+    }
+    // didn't top the range, but if it was clearly too easy, push anyway
+    if (minRir !== null && minRir >= 3) {
+      return { headline: `Go heavier → ${topW + 2.5}kg`, detail: `Last time you stopped with ${minRir} reps still in the tank, that’s too easy. Add the weight.`, last, lastStr, suggestedWeight: topW + 2.5 };
+    }
+    return { headline: `Beat ${topW}kg`, detail: `Same weight, more reps than last time. Then the weight goes up.`, last, lastStr, suggestedWeight: topW };
   }
   // bodyweight / timed
   return hitAll

@@ -4,7 +4,7 @@
    ============================================================ */
 
 // App version watermark — bump this AND the CACHE const in sw.js together on every ship.
-export const APP_VERSION = 'v0.13.0';
+export const APP_VERSION = 'v0.14.0';
 
 export const COMMANDMENTS = [
   'Thou shalt show up, even when thou canst not be fucked.',

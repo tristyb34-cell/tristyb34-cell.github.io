@@ -1,4 +1,4 @@
-import { getSessions } from '../workouts.js';
+import { getSessions, bestE1rm } from '../workouts.js';
 import { LIBRARY } from '../program.js';
 import { sparkline, lineChart, heatmap } from '../charts.js';
 
@@ -6,9 +6,10 @@ export function renderHistory() {
   return { html: '', onMount: (root) => paint(root) };
 }
 
-// best metric for an exercise within one session (weight → max kg; else max reps)
+// best metric for an exercise within one session
+// weight → estimated 1RM (honest strength, smooths bouncy top weights); else max reps
 function bestOf(entry, type) {
-  if (type === 'weight') return Math.max(0, ...entry.sets.map(s => s.weight || 0));
+  if (type === 'weight') return Math.round(bestE1rm(entry));
   return Math.max(0, ...entry.sets.map(s => s.reps || 0));
 }
 
@@ -50,12 +51,13 @@ async function paint(root) {
       const vals = pts.map(p => p.y);
       const latest = vals[vals.length - 1];
       const unit = ex.type === 'weight' ? 'kg' : (ex.type === 'timed' ? 's' : ' reps');
+      const metricLabel = ex.type === 'weight' ? `estimated 1RM ${latest}kg` : `best ${latest}${unit}`;
       return `
         <button class="prog-row" data-ex="${exId}">
           <img class="ex-thumb sm" src="${ex.frames[0]}" alt="" loading="lazy" />
           <div class="ex-meta">
             <div class="ex-name">${ex.name}</div>
-            <div class="ex-sub">best ${latest}${unit} · ${pts.length} session${pts.length > 1 ? 's' : ''}</div>
+            <div class="ex-sub">${metricLabel} · ${pts.length} session${pts.length > 1 ? 's' : ''}</div>
           </div>
           ${sparkline(vals)}
         </button>
