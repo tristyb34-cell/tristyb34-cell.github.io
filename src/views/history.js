@@ -1,6 +1,55 @@
 import { getSessions, bestE1rm } from '../workouts.js';
-import { LIBRARY } from '../program.js';
+import { LIBRARY, GROUPS } from '../program.js';
 import { sparkline, lineChart, heatmap } from '../charts.js';
+
+// V-taper width drivers — the muscles his Spider-Man goal lives or dies on
+const VTAPER = new Set(['Shoulders', 'Back']);
+const VOL_ORDER = ['Shoulders', 'Back', 'Chest', 'Biceps', 'Triceps', 'Legs', 'Core'];
+
+function weeklyVolume(sessions) {
+  const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 6);
+  const counts = {};
+  for (const g of GROUPS) counts[g] = 0;
+  for (const s of sessions) {
+    if (new Date(s.date + 'T00:00:00') < weekAgo) continue;
+    for (const e of s.entries) {
+      const ex = LIBRARY[e.exId];
+      if (ex) counts[ex.group] = (counts[ex.group] || 0) + e.sets.length;
+    }
+  }
+  return counts;
+}
+
+function volStatus(n) {
+  if (n === 0) return { label: 'none', cls: 'none' };
+  if (n < 10) return { label: 'build', cls: 'low' };
+  if (n <= 20) return { label: 'on target', cls: 'good' };
+  return { label: 'high', cls: 'high' };
+}
+
+function volumeCard(sessions) {
+  const counts = weeklyVolume(sessions);
+  if (!Object.values(counts).reduce((a, b) => a + b, 0)) return '';
+  const SCALE = 24; // bar maxes out at 24 sets; the 10-20 band is the green zone
+  const rows = VOL_ORDER.map(g => {
+    const n = counts[g] || 0;
+    const st = volStatus(n);
+    const fillPct = Math.min(100, Math.round((n / SCALE) * 100));
+    const star = VTAPER.has(g) ? ' <span class="vol-star" aria-hidden="true">★</span>' : '';
+    return `
+      <div class="vol-row">
+        <div class="vol-name">${g}${star}</div>
+        <div class="vol-track"><span class="vol-band"></span><span class="vol-fill ${st.cls}" style="width:${fillPct}%"></span></div>
+        <div class="vol-count">${n}<span class="vol-status ${st.cls}">${st.label}</span></div>
+      </div>`;
+  }).join('');
+  return `
+    <div class="section-label">This week’s volume · working sets per muscle</div>
+    <div class="card vol-card">
+      ${rows}
+      <p class="coach-last">Aim ~10–20 sets per muscle a week. ★ = your V-taper drivers (shoulders &amp; back); don’t let them fall behind legs.</p>
+    </div>`;
+}
 
 export function renderHistory() {
   return { html: '', onMount: (root) => paint(root) };
@@ -78,6 +127,8 @@ async function paint(root) {
 
     <div class="section-label">Activity · ${last7} in the last 7 days</div>
     <div class="card">${heatmap(activeDays)}</div>
+
+    ${volumeCard(sessions)}
 
     <div class="section-label">Exercise progress · tap to expand</div>
     ${progRows || '<div class="card"><p class="lead">Log a few sessions to see your lines climb.</p></div>'}
