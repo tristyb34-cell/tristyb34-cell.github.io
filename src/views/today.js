@@ -12,7 +12,7 @@ import { openReview } from '../review.js';
 import { getReentry } from '../reentry.js';
 import { treeUnlocked, TREE_UNLOCK_AT } from '../skills.js';
 import { openSkillTree } from '../skilltree.js';
-import { reminderSettings, enable as enableNotify, disable as disableNotify, fireDueReminders } from '../notify.js';
+import { reminderSettings, enable as enableNotify, disable as disableNotify, fireDueReminders, pushSupported, getPushSubscriptionJSON } from '../notify.js';
 import { getGamePlan, planText, openGamePlan } from '../gameplan.js';
 import { openWeeklyReview } from '../weekreview.js';
 
@@ -199,10 +199,20 @@ function remindersCard(rem) {
         <p class="coach-last" style="margin-top:10px;">Best-effort: fires when you open the app. For guaranteed buzzes, also set a couple of iPhone alarms. Edit times in Fuel → Times.</p>
       </div>`;
   }
+  const pushSetup = pushSupported()
+    ? `<details class="push-setup">
+        <summary>Finish background push (one-time)</summary>
+        <p class="coach-last" style="margin:8px 0 10px;">Copy this code and send it to Claude to switch on real notifications that buzz even when DAX is closed.</p>
+        <label for="push-sub" class="push-label">Your push code</label>
+        <textarea id="push-sub" class="push-sub" readonly rows="4" aria-label="Your push subscription code">Loading…</textarea>
+        <button class="btn ghost" id="push-copy">Copy code</button>
+      </details>`
+    : '';
   return `
     <div class="section-label">Coach reminders · on</div>
     <div class="card">
       <p class="lead" style="margin-bottom:12px;">Your timetable lives in <strong>Fuel → Times</strong>. Edit any time there.</p>
+      ${pushSetup}
       <button class="btn ghost" id="notify-off">Turn off reminders</button>
     </div>`;
 }
@@ -215,6 +225,17 @@ function wireReminders(root) {
   });
   const off = root.querySelector('#notify-off');
   if (off) off.addEventListener('click', async () => { await disableNotify(); paintToday(root); });
+
+  const subTa = root.querySelector('#push-sub');
+  if (subTa) getPushSubscriptionJSON().then(json => { subTa.value = json || 'No code yet, turn reminders off and on again to generate it.'; });
+  const copyBtn = root.querySelector('#push-copy');
+  if (copyBtn) copyBtn.addEventListener('click', async () => {
+    const ta = root.querySelector('#push-sub');
+    try { await navigator.clipboard.writeText(ta.value); }
+    catch (_) { ta.select(); try { document.execCommand('copy'); } catch (e) {} }
+    copyBtn.textContent = 'Copied ✓';
+    setTimeout(() => { copyBtn.textContent = 'Copy code'; }, 1500);
+  });
 }
 
 /* ---------- milestone celebration ---------- */

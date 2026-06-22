@@ -1,6 +1,6 @@
 /* DAX service worker — offline app shell.
    Bump CACHE when you ship changes so clients pull fresh files. */
-const CACHE = 'dax-v0.19.0';
+const CACHE = 'dax-v0.20.0';
 
 const ASSETS = [
   '/',
@@ -27,6 +27,8 @@ const ASSETS = [
   '/src/skills.js',
   '/src/skilltree.js',
   '/src/schedule.js',
+  '/src/gameplan.js',
+  '/src/weekreview.js',
   '/src/views/today.js',
   '/src/views/plan.js',
   '/src/views/history.js',
@@ -55,6 +57,30 @@ self.addEventListener('activate', (e) => {
     caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
+});
+
+// web push: show the notification the cron sent (works when the app is closed)
+self.addEventListener('push', (e) => {
+  let data = { title: 'DAX', body: 'Time to move.' };
+  try { if (e.data) data = { ...data, ...e.data.json() }; } catch (_) { if (e.data) data.body = e.data.text(); }
+  e.waitUntil(self.registration.showNotification(data.title, {
+    body: data.body,
+    icon: '/assets/icons/icon-192.png',
+    badge: '/assets/icons/icon-192.png',
+    tag: data.tag || 'dax-push',
+    data: { url: data.url || '/' },
+  }));
+});
+
+// tapping a push opens (or focuses) the app
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || '/';
+  e.waitUntil((async () => {
+    const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const c of all) { if ('focus' in c) return c.focus(); }
+    if (self.clients.openWindow) return self.clients.openWindow(url);
+  })());
 });
 
 // network-first for navigations (so updates show), cache-first for assets (so it's fast & offline)

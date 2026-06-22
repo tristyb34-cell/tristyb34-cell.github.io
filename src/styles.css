@@ -550,6 +550,13 @@ h1.screen-title { font-size: 30px; font-weight: 850; line-height: 1.05; margin-b
 .seg.col .seg-btn { padding: 13px; }
 #onboard .btn, #review .btn { margin-top: 20px; }
 
+/* one-time push-subscription handoff */
+.push-setup { margin-bottom: 12px; }
+.push-setup summary { font-weight: 700; font-size: 13px; color: var(--accent); cursor: pointer; }
+.push-label { display: block; font-size: 12px; color: var(--text-faint); margin: 6px 0 4px; }
+.push-sub { width: 100%; background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-sm); color: var(--text-dim); font-family: ui-monospace, SFMono-Regular, monospace; font-size: 11px; padding: 8px; resize: vertical; margin-bottom: 10px; }
+.push-sub:focus { outline: none; border-color: var(--accent); }
+
 /* protein game-plan picker (modal sheet) */
 .overlay-sheet {
   position: fixed; inset: 0; z-index: 120; background: var(--bg); overflow-y: auto;
