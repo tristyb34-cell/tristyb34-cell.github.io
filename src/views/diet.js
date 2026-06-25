@@ -5,6 +5,7 @@ import {
 } from '../nutrition.js';
 import { getTargets } from '../profile.js';
 import { getScheduleByKind, updateItem, resetSchedule } from '../schedule.js';
+import { openCost } from '../cost.js';
 
 let sub = 'today';
 let schedKind = 'weekday';
@@ -171,9 +172,12 @@ function renderToday(body, log, cre) {
           </div>`;
       }).join('')}
     </div>
+    <button class="btn ghost cost-link" id="cost-link"><span aria-hidden="true">⚖️</span> What does a slip actually cost?</button>
   `;
 
   const root = body.closest('.view');
+  const costLink = body.querySelector('#cost-link');
+  if (costLink) costLink.addEventListener('click', () => openCost(costLink, null, 'sweets'));
   body.querySelectorAll('.meal-main').forEach(b => b.addEventListener('click', async () => {
     await toggleMeal(b.dataset.meal);
     paint(root);

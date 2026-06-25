@@ -4,7 +4,7 @@
    ============================================================ */
 
 // App version watermark — bump this AND the CACHE const in sw.js together on every ship.
-export const APP_VERSION = 'v0.20.0';
+export const APP_VERSION = 'v0.21.0';
 
 // Public VAPID key for web push (safe to embed; private key lives in GitHub Secrets).
 export const VAPID_PUBLIC_KEY = 'BEznbY05xi5mY6_hwZOAamNsu5ZP-p4Fs1l2cr3M9bXuYzfbVaJpwBZTxzMxUlgrQ_mNR2zz-TCUEwsp2JwWdJo';
@@ -36,6 +36,23 @@ export const GOAL = {
   dailyCalories: 2850,
   dailyProtein: 140,
 };
+
+// My Why — the durable reasons, beyond the mirror. The reflective side
+// of the coach surfaces one of these on rest days. Aesthetics gets you in
+// the door; this is the prize. (Surfaced via whyOfTheDay; full list in the
+// "My Why" card on Today.)
+export const WHY = [
+  { head: 'A retirement fund for my body', text: 'Muscle is a savings account I can only pay into now. The strength I bank in my twenties is what I live off at eighty.' },
+  { head: 'Independent at 80, not stuck in a chair', text: 'Most people lose the strength to stand from a chair by their eighties. I’m building the buffer so I never do.' },
+  { head: 'Protect the engine', text: 'Lifting guards my bones, my brain, and my blood sugar for life. It’s the single biggest lever on staying healthy as I age.' },
+  { head: 'Don’t deteriorate', text: 'My body will age either way. Training is how I make the decline gentle instead of steep.' },
+  { head: 'Stay a fully functional human', text: 'The abs get me in the door. Being strong, mobile and sharp for decades is the real prize.' },
+];
+
+export function whyOfTheDay() {
+  const i = Math.floor(Date.now() / 86400000) % WHY.length;
+  return WHY[i];
+}
 
 // Dynamic warm-up BEFORE lifting: wakes the joints, primes the muscles, prevents injury.
 export const WARMUP = [

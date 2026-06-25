@@ -658,3 +658,35 @@ h1.screen-title { font-size: 30px; font-weight: 850; line-height: 1.05; margin-b
 .card-tap { cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform .12s var(--ease), border-color .2s; }
 .card-tap:active { transform: scale(.985); }
 .tap-hint { margin-top: 14px; font-size: 12.5px; font-weight: 800; color: var(--accent); letter-spacing: .3px; }
+
+/* focus indicator for segmented buttons (was missing; WCAG 2.4.7) */
+.seg-btn:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
+/* ---------- phase strip (build → overshoot → cut → bridge) ---------- */
+.phase-strip { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: var(--r-md); padding: 12px 14px; margin: 0 0 12px; }
+.phase-ic { font-size: 22px; line-height: 1; flex-shrink: 0; }
+.phase-label { font-weight: 850; font-size: 15px; letter-spacing: .2px; }
+.phase-sub { color: var(--text-dim); font-size: 12.5px; line-height: 1.4; margin-top: 2px; }
+
+/* reflective "why" banner on rest days */
+.why-banner { border-left: 3px solid var(--accent-2); }
+.why-banner strong { color: var(--text); }
+
+/* My Why card icon reuses .calis-icon; manifesto list in the overlay */
+.why-list { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+.why-item { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 14px 16px; }
+.why-head { font-weight: 850; font-size: 15.5px; }
+.why-text { color: var(--text-dim); font-size: 14px; line-height: 1.5; margin-top: 6px; }
+
+/* ---------- Know the Cost overlay ---------- */
+.cost-list { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
+.cost-item { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 14px 16px; }
+.cost-head { display: flex; align-items: center; gap: 10px; }
+.cost-ic { font-size: 20px; line-height: 1; }
+.cost-name { font-weight: 850; font-size: 15.5px; }
+.cost-tag { margin-left: auto; font-size: 11px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--text-dim); }
+.cost-tag.miss { color: var(--warn); border-color: var(--warn); }
+.cost-tag.slip { color: var(--text-dim); }
+.cost-seg { margin: 12px 0; }
+.cost-text { color: var(--text-dim); font-size: 14px; line-height: 1.55; margin: 0; }
+.cost-link { margin-top: 14px; }

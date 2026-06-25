@@ -5,6 +5,7 @@
    ============================================================ */
 import { db } from './store.js';
 import { GOAL } from './data.js';
+import { phaseCalMode } from './phase.js';
 
 export const DEFAULT_PROFILE = {
   weight: GOAL.startWeight,   // kg
@@ -58,11 +59,22 @@ export async function getTargets() {
   const tw = trendWeight(weighins);
   const base = baseTargets(p, tw);
   const adjust = (await db.get('calAdjust', 0)) || 0;
+  const mode = await phaseCalMode();
+  const kg = tw || p.weight;
+
+  // the phase drives the calorie target: surplus while building, a real
+  // deficit on a cut (protein stays high to hold muscle), maintenance on the bridge.
+  let cal, protein = base.protein;
+  if (mode === 'deficit') { cal = round10(base.tdee - 450); protein = round5(2.2 * kg); }
+  else if (mode === 'maintain') { cal = round10(base.tdee); }
+  else { cal = base.cal + adjust; }
+
   return {
-    cal: Math.max(1600, base.cal + adjust),
-    protein: base.protein,
+    cal: Math.max(1600, cal),
+    protein,
     calBase: base.cal,
     calAdjust: adjust,
+    phaseMode: mode,
     startWeight: weighins.length ? weighins[0].kg : p.weight,
     goalWeight: p.goalWeight,
     trendWeight: tw,
@@ -73,6 +85,9 @@ export async function getTargets() {
 // Looks at the trend slope and nudges the calorie adjustment if you've
 // stalled (eat more) or you're gaining too fast (ease off). Self-limiting.
 export async function evaluateAdaptive(now = new Date()) {
+  // the surplus-tuner only makes sense while building — on a cut you WANT
+  // the weight to fall, so don't let it fight the deficit.
+  if ((await phaseCalMode()) !== 'surplus') return null;
   const weighins = (await db.get('weighins', [])) || [];
   if (weighins.length < 8) return null; // need ~a week+ of data
 

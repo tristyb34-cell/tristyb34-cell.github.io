@@ -1,5 +1,8 @@
 import { db, exportBackup } from '../store.js';
-import { commandmentOfTheDay, GOAL } from '../data.js';
+import { commandmentOfTheDay, whyOfTheDay, GOAL } from '../data.js';
+import { getPhase, advancePhase, PHASES } from '../phase.js';
+import { openWhy } from '../why.js';
+import { openCost } from '../cost.js';
 import { LIBRARY, estimateMinutes } from '../program.js';
 import { getPlan, dayForToday } from '../plan.js';
 import { getActive } from '../workouts.js';
@@ -57,6 +60,7 @@ async function paintToday(root) {
   const re = await getReentry();
   const treeOpen = treeUnlocked(ctx.totalWorkouts);
   const gp = await getGamePlan();
+  const phase = await getPhase();
 
   const reentryHtml = re.active
     ? `<div class="nudge reentry-nudge"><span class="nudge-ic">🛡️</span><span>${re.notStarted
@@ -98,6 +102,44 @@ async function paintToday(root) {
           <button class="btn" id="gp-edit" aria-haspopup="dialog">Set my protein game plan</button>
         </div>`}`;
   const backupHtml = backupDue ? `<div class="nudge action-nudge"><span class="nudge-ic">💾</span><span>You’ve got real data now. Back it up so it can never vanish.</span><button class="mini-btn" id="do-backup">Back up</button></div>` : '';
+
+  // where you are in the build/cut cycle (phase identity is carried in the words + icon, never colour alone)
+  const phaseHtml = `
+    <div class="phase-strip">
+      <span class="phase-ic" aria-hidden="true">${phase.icon}</span>
+      <div class="phase-meta">
+        <div class="phase-label">${phase.label}</div>
+        <div class="phase-sub">${phase.blurb}</div>
+      </div>
+    </div>`;
+  const advLabels = { overshoot: 'Build past it', cut: 'Start cut', bridge: 'Ease off', build: 'Resume build' };
+  const phaseSuggestHtml = phase.suggest
+    ? `<div class="nudge action-nudge"><span class="nudge-ic">${PHASES[phase.suggest.to].icon}</span><span>${phase.suggest.why}</span><button class="mini-btn" id="phase-advance">${advLabels[phase.suggest.to] || 'Switch'}</button></div>`
+    : '';
+  const whyOnly = whyOfTheDay();
+  const whyBannerHtml = !day
+    ? `<div class="nudge why-banner"><span class="nudge-ic" aria-hidden="true">🛡️</span><span><strong>${whyOnly.head}.</strong> ${whyOnly.text}</span></div>`
+    : '';
+  const whyHtml = `
+    <div class="section-label">Beyond the mirror</div>
+    <button class="ex-card why-card" id="open-why" aria-haspopup="dialog">
+      <div class="calis-icon" aria-hidden="true">🛡️</div>
+      <div class="ex-meta">
+        <div class="ex-name">My Why</div>
+        <div class="ex-sub">${whyOnly.head}</div>
+      </div>
+      <div class="ex-status" aria-hidden="true">›</div>
+    </button>`;
+  const costHtml = `
+    <div class="section-label">Know the cost</div>
+    <button class="ex-card" id="open-cost" aria-haspopup="dialog">
+      <div class="calis-icon" aria-hidden="true">⚖️</div>
+      <div class="ex-meta">
+        <div class="ex-name">Know the cost</div>
+        <div class="ex-sub">What one slip does, vs ten. No fear, just facts.</div>
+      </div>
+      <div class="ex-status" aria-hidden="true">›</div>
+    </button>`;
 
   let mid;
   if (day) {
@@ -146,7 +188,7 @@ async function paintToday(root) {
       <button class="btn ghost" id="edit">✎ Edit my plan</button>`;
   }
 
-  root.innerHTML = coachHtml + reentryHtml + adaptiveHtml + weekReviewHtml + reviewHtml + backupHtml + nudgeHtml + mid + gameplanHtml + calisHtml + remindersCard(rem);
+  root.innerHTML = coachHtml + phaseHtml + phaseSuggestHtml + reentryHtml + adaptiveHtml + weekReviewHtml + reviewHtml + backupHtml + nudgeHtml + mid + whyBannerHtml + whyHtml + costHtml + gameplanHtml + calisHtml + remindersCard(rem);
 
   // wiring
   const startBtn = root.querySelector('#start');
@@ -164,6 +206,12 @@ async function paintToday(root) {
   }
   root.querySelector('#edit').addEventListener('click', () => openEditor(root));
   root.querySelector('#calis').addEventListener('click', () => openSkillTree(root));
+  const phaseBtn = root.querySelector('#phase-advance');
+  if (phaseBtn) phaseBtn.addEventListener('click', async () => { await advancePhase(phase.suggest.to); paintToday(root); });
+  const whyBtn = root.querySelector('#open-why');
+  if (whyBtn) whyBtn.addEventListener('click', () => openWhy(whyBtn, () => paintToday(root)));
+  const costBtn = root.querySelector('#open-cost');
+  if (costBtn) costBtn.addEventListener('click', () => openCost(costBtn, () => paintToday(root)));
   const rv = root.querySelector('#open-review');
   if (rv) rv.addEventListener('click', () => openReview(root));
   const wrv = root.querySelector('#open-weekreview');
