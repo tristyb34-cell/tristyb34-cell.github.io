@@ -32,6 +32,9 @@
     <main id="view" class="view"></main>
 
     <nav class="tabbar" id="tabbar"></nav>
+
+    <!-- screen-reader live region: lives outside #view so paint() never wipes it -->
+    <div id="sr-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
   </div>
 
   <script type="module" src="/src/main.js"></script>

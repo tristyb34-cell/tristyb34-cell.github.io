@@ -18,6 +18,7 @@ import { openSkillTree } from '../skilltree.js';
 import { reminderSettings, enable as enableNotify, disable as disableNotify, fireDueReminders, pushSupported, getPushSubscriptionJSON } from '../notify.js';
 import { getGamePlan, planText, openGamePlan } from '../gameplan.js';
 import { openWeeklyReview } from '../weekreview.js';
+import { journalPrompt, markJournalPrompted } from '../journal.js';
 
 // strip a session to its big lifts so a "can't be bothered" day still happens
 function quickVersion(day) {
@@ -62,6 +63,7 @@ async function paintToday(root) {
   const treeOpen = treeUnlocked(ctx.totalWorkouts);
   const gp = await getGamePlan();
   const phase = await getPhase();
+  const jPrompt = await journalPrompt();
 
   const reentryHtml = re.active
     ? `<div class="nudge reentry-nudge"><span class="nudge-ic">🛡️</span><span>${re.notStarted
@@ -103,6 +105,7 @@ async function paintToday(root) {
           <button class="btn" id="gp-edit" aria-haspopup="dialog">Set my protein game plan</button>
         </div>`}`;
   const backupHtml = backupDue ? `<div class="nudge action-nudge"><span class="nudge-ic">💾</span><span>You’ve got real data now. Back it up so it can never vanish.</span><button class="mini-btn" id="do-backup">Back up</button></div>` : '';
+  const journalHtml = jPrompt ? `<div class="nudge action-nudge"><span class="nudge-ic" aria-hidden="true">📓</span><span>${jPrompt.text}</span><button class="mini-btn" id="journal-check">Check in</button></div>` : '';
 
   // where you are in the build/cut cycle (phase identity is carried in the words + icon, never colour alone)
   const phaseHtml = `
@@ -190,7 +193,7 @@ async function paintToday(root) {
       <button class="btn ghost" id="edit">✎ Edit my plan</button>`;
   }
 
-  root.innerHTML = coachHtml + phaseHtml + phaseSuggestHtml + reentryHtml + adaptiveHtml + weekReviewHtml + reviewHtml + backupHtml + nudgeHtml + mid + whyBannerHtml + whyHtml + costHtml + gameplanHtml + calisHtml + remindersCard(rem);
+  root.innerHTML = coachHtml + phaseHtml + phaseSuggestHtml + reentryHtml + adaptiveHtml + journalHtml + weekReviewHtml + reviewHtml + backupHtml + nudgeHtml + mid + whyBannerHtml + whyHtml + costHtml + gameplanHtml + calisHtml + remindersCard(rem);
 
   // wiring
   const startBtn = root.querySelector('#start');
@@ -214,6 +217,11 @@ async function paintToday(root) {
   if (whyBtn) whyBtn.addEventListener('click', () => openWhy(whyBtn, () => paintToday(root)));
   const costBtn = root.querySelector('#open-cost');
   if (costBtn) costBtn.addEventListener('click', () => openCost(costBtn, () => paintToday(root)));
+  const jBtn = root.querySelector('#journal-check');
+  if (jBtn) jBtn.addEventListener('click', () => {
+    sessionStorage.setItem('dax_focus_journal', '1'); // tell Journal to focus the box on arrival
+    window.dispatchEvent(new CustomEvent('dax:navigate', { detail: 'journal' }));
+  });
   const rv = root.querySelector('#open-review');
   if (rv) rv.addEventListener('click', () => openReview(root));
   const wrv = root.querySelector('#open-weekreview');
@@ -235,6 +243,9 @@ async function paintToday(root) {
   // celebrate any freshly-earned milestones
   const fresh = await checkMilestones(ctx);
   if (fresh.length) celebrate(fresh);
+
+  // start the journal-prompt cooldown so it doesn't reappear every session
+  if (jPrompt) markJournalPrompted();
 }
 
 /* ---------- reminders settings card ---------- */

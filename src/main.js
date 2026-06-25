@@ -7,12 +7,14 @@ import { renderPlan } from './views/plan.js';
 import { renderHistory } from './views/history.js';
 import { renderDiet } from './views/diet.js';
 import { renderProgress } from './views/progress.js';
+import { renderJournal } from './views/journal.js';
 
 const TABS = [
   { id: 'today',    label: 'Today',    icon: '⚡', tint: true,  render: renderToday },
   { id: 'plan',     label: 'Plan',     icon: '📋', tint: false, render: renderPlan },
   { id: 'history',  label: 'History',  icon: '📊', tint: false, render: renderHistory },
   { id: 'diet',     label: 'Fuel',     icon: '🍽️', tint: false, render: renderDiet },
+  { id: 'journal',  label: 'Journal',  icon: '📓', tint: false, render: renderJournal },
   { id: 'progress', label: 'Progress', icon: '📸', tint: false, render: renderProgress },
 ];
 
@@ -41,6 +43,9 @@ async function go(tabId) {
   if (result && result.onMount) result.onMount(viewEl);
   history.replaceState({ tab: tab.id }, '', `#${tab.id}`);
 }
+
+// let any view request a tab switch without a brittle DOM selector or import cycle
+window.addEventListener('dax:navigate', (e) => { if (e.detail) go(e.detail); });
 
 async function init() {
   const vEl = document.getElementById('app-version');
