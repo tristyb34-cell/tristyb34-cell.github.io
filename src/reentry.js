@@ -27,3 +27,29 @@ export async function getReentry(now = new Date()) {
     daysLeft: BLOCK_DAYS - days,
   };
 }
+
+const clone = (x) => JSON.parse(JSON.stringify(x));
+const ONRAMP_WEEKS = 3; // volume ease-in only for the first 3 weeks
+
+// Scale a day's VOLUME down for the first 3 weeks back (load is capped separately
+// by the tendon block). Same exercises he'll grow into, just fewer sets — so he
+// learns the movements without the wrecking-ball soreness that ends week one.
+export function applyOnramp(day, re) {
+  if (!day || !re || !re.active) return day;
+  const week = re.notStarted ? 1 : re.week;
+  if (week > ONRAMP_WEEKS) return day;
+  const d = clone(day);
+  if (week === 1) d.items = d.items.slice(0, 4).map(it => ({ ...it, sets: 2 }));      // top 4 compounds, 2 sets
+  else if (week === 2) d.items = d.items.map(it => ({ ...it, sets: 2 }));             // all lifts, 2 sets
+  else d.items = d.items.map(it => ({ ...it, sets: Math.max(2, it.sets - 1) }));      // all lifts, one set lighter
+  d.onrampWeek = week;
+  d.onrampTotal = ONRAMP_WEEKS;
+  return d;
+}
+
+// one-line explainer for the Today hero during the onramp
+export function onrampNote(week) {
+  if (week === 1) return 'Ease-in week 1: just the big lifts, 2 sets each. Groove the movements, leave the gym fresh. Volume builds next week.';
+  if (week === 2) return 'Ease-in week 2: all your lifts now, still 2 sets each. Adding the work back gradually.';
+  return 'Ease-in week 3: nearly full volume, one set lighter. Last easy week before the full plan.';
+}

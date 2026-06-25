@@ -690,3 +690,6 @@ h1.screen-title { font-size: 30px; font-weight: 850; line-height: 1.05; margin-b
 .cost-seg { margin: 12px 0; }
 .cost-text { color: var(--text-dim); font-size: 14px; line-height: 1.55; margin: 0; }
 .cost-link { margin-top: 14px; }
+
+/* re-entry volume onramp note in the training hero (first 3 weeks back) */
+.onramp-note { margin: 14px 0 0; padding: 10px 12px; background: var(--surface-2); border-left: 3px solid var(--accent); border-radius: var(--r-sm); color: var(--text); font-size: 13px; line-height: 1.5; }

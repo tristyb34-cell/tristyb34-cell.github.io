@@ -12,7 +12,7 @@ import { openDayPreview } from './plan.js';
 import { buildContext, greeting, nudges, checkMilestones } from '../motivation.js';
 import { evaluateAdaptive } from '../profile.js';
 import { openReview } from '../review.js';
-import { getReentry } from '../reentry.js';
+import { getReentry, applyOnramp, onrampNote } from '../reentry.js';
 import { treeUnlocked, TREE_UNLOCK_AT } from '../skills.js';
 import { openSkillTree } from '../skilltree.js';
 import { reminderSettings, enable as enableNotify, disable as disableNotify, fireDueReminders, pushSupported, getPushSubscriptionJSON } from '../notify.js';
@@ -58,6 +58,7 @@ async function paintToday(root) {
   const reviewDue = ctx.totalWorkouts >= 8 && (!lastReview || daysBetween(lastReview, ctx.now) >= 30);
   const weekReviewDue = ctx.totalWorkouts >= 3 && (!lastWeekReview || daysBetween(lastWeekReview, ctx.now) >= 7);
   const re = await getReentry();
+  const trainDay = applyOnramp(day, re); // first 3 weeks back: same day, reduced volume
   const treeOpen = treeUnlocked(ctx.totalWorkouts);
   const gp = await getGamePlan();
   const phase = await getPhase();
@@ -143,18 +144,19 @@ async function paintToday(root) {
 
   let mid;
   if (day) {
-    const mins = estimateMinutes(day);
-    const continuing = active && active.dow === day.dow && Object.keys(active.log || {}).length;
+    const mins = estimateMinutes(trainDay);
+    const continuing = active && active.dow === trainDay.dow && Object.keys(active.log || {}).length;
     mid = `
       <div class="card card-hero card-tap" id="today-card">
         <div class="eyebrow">${today} • Training day</div>
-        <h1 class="screen-title">${day.title}</h1>
+        <h1 class="screen-title">${trainDay.title}</h1>
         <div style="margin:14px 0 4px; display:flex; gap:8px; flex-wrap:wrap;">
           <span class="pill accent">~${mins} min</span>
-          <span class="pill">${day.items.length} exercises</span>
+          <span class="pill">${trainDay.items.length} exercises</span>
         </div>
-        <ul class="mini-list">${day.items.map(it => `<li>${LIBRARY[it.id] ? LIBRARY[it.id].name : it.id} <span style="opacity:.55; font-variant-numeric:tabular-nums;">${it.sets}×${it.reps}</span></li>`).join('')}</ul>
+        <ul class="mini-list">${trainDay.items.map(it => `<li>${LIBRARY[it.id] ? LIBRARY[it.id].name : it.id} <span style="opacity:.55; font-variant-numeric:tabular-nums;">${it.sets}×${it.reps}</span></li>`).join('')}</ul>
         <div class="tap-hint">👁 Tap to preview all exercises ›</div>
+        ${trainDay.onrampWeek ? `<p class="onramp-note">${onrampNote(trainDay.onrampWeek)}</p>` : ''}
       </div>
       <button class="btn" id="start">${continuing ? '▶︎ Continue workout' : '⚡ Start workout'}</button>
       <div style="height:10px;"></div>
@@ -192,9 +194,9 @@ async function paintToday(root) {
 
   // wiring
   const startBtn = root.querySelector('#start');
-  if (startBtn) startBtn.addEventListener('click', () => renderSession(root, day));
+  if (startBtn) startBtn.addEventListener('click', () => renderSession(root, trainDay));
   const quickBtn = root.querySelector('#quick');
-  if (quickBtn) quickBtn.addEventListener('click', () => renderSession(root, quickVersion(day)));
+  if (quickBtn) quickBtn.addEventListener('click', () => renderSession(root, quickVersion(trainDay)));
   const gpEdit = root.querySelector('#gp-edit');
   if (gpEdit) gpEdit.addEventListener('click', () => openGamePlan(gpEdit, () => paintToday(root)));
   const todayCard = root.querySelector('#today-card');
@@ -227,7 +229,7 @@ async function paintToday(root) {
     paintToday(root);
   });
   root.querySelectorAll('.ex-card[data-dow]').forEach(btn =>
-    btn.addEventListener('click', () => renderSession(root, plan.find(s => s.dow === btn.dataset.dow))));
+    btn.addEventListener('click', () => renderSession(root, applyOnramp(plan.find(s => s.dow === btn.dataset.dow), re))));
   wireReminders(root);
 
   // celebrate any freshly-earned milestones
