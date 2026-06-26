@@ -732,3 +732,15 @@ h1.screen-title { font-size: 30px; font-weight: 850; line-height: 1.05; margin-b
 .recipe .amt { color: var(--accent); font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .recipe-alt { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
 .alt-label { font-size: 12px; font-weight: 800; letter-spacing: .3px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 4px; }
+
+/* ---------- consistency card (the keystone metric) ---------- */
+.consistency-card { border-color: rgba(255, 86, 48, .35); }
+.cons-top { display: flex; align-items: center; gap: 16px; margin-top: 6px; }
+.cons-pct { font-size: 46px; font-weight: 850; line-height: 1; font-variant-numeric: tabular-nums; }
+.cons-unit { font-size: 20px; font-weight: 800; }
+.cons-meta { flex: 1; min-width: 0; }
+.cons-label { color: var(--text-dim); font-size: 12.5px; margin-bottom: 8px; }
+.cons-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.cons-goal { margin: 14px 0 0; font-weight: 750; font-size: 14px; color: var(--text); }
+.cons-coach { margin: 10px 0 0; color: var(--text-dim); font-size: 13.5px; line-height: 1.5; }
+.cons-bigtitle { font-size: 26px; font-weight: 850; margin: 2px 0 8px; }

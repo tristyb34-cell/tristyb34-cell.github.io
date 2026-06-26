@@ -19,6 +19,7 @@ import { reminderSettings, enable as enableNotify, disable as disableNotify, fir
 import { getGamePlan, planText, openGamePlan } from '../gameplan.js';
 import { openWeeklyReview } from '../weekreview.js';
 import { journalPrompt, markJournalPrompted } from '../journal.js';
+import { computeConsistency, consistencyCoach } from '../consistency.js';
 
 // strip a session to its big lifts so a "can't be bothered" day still happens
 function quickVersion(day) {
@@ -64,6 +65,7 @@ async function paintToday(root) {
   const gp = await getGamePlan();
   const phase = await getPhase();
   const jPrompt = await journalPrompt();
+  const cons = await computeConsistency();
 
   const reentryHtml = re.active
     ? `<div class="nudge reentry-nudge"><span class="nudge-ic">🛡️</span><span>${re.notStarted
@@ -106,6 +108,33 @@ async function paintToday(root) {
         </div>`}`;
   const backupHtml = backupDue ? `<div class="nudge action-nudge"><span class="nudge-ic">💾</span><span>You’ve got real data now. Back it up so it can never vanish.</span><button class="mini-btn" id="do-backup">Back up</button></div>` : '';
   const journalHtml = jPrompt ? `<div class="nudge action-nudge"><span class="nudge-ic" aria-hidden="true">📓</span><span>${jPrompt.text}</span><button class="mini-btn" id="journal-check">Check in</button></div>` : '';
+
+  // the keystone metric: showing up. Big, daily, framed as the ONLY scoreboard.
+  const goalLabel = new Date(cons.goalDate + 'T00:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  const streakPill = cons.streak >= 1
+    ? `<span class="pill"><span aria-hidden="true">🔥</span> Streak ${cons.streak}</span>`
+    : `<span class="pill">Streak 0</span>`;
+  const consistencyHtml = `
+    <div class="card consistency-card">
+      <div class="eyebrow">The only scoreboard right now</div>
+      ${cons.started ? `
+        <div class="cons-top">
+          <div class="cons-pct">${cons.pct == null ? '—' : `${cons.pct}<span class="cons-unit">%</span>`}</div>
+          <div class="cons-meta">
+            <div class="cons-label">shown up · last 30 days</div>
+            <div class="cons-pills">
+              <span class="pill accent">This week ${cons.weekDone}/${cons.target}</span>
+              ${streakPill}
+            </div>
+          </div>
+        </div>
+        <p class="cons-goal">Your only job till ${goalLabel}: show up. Even when it sucks.</p>
+      ` : `
+        <div class="cons-bigtitle">Just show up.</div>
+        <p class="lead">Your only job for the next 90 days is to walk in on your training days. Not heavy, not long. Just there. The first session is the one that counts.</p>
+      `}
+      <p class="cons-coach">${consistencyCoach(cons)}</p>
+    </div>`;
 
   // where you are in the build/cut cycle (phase identity is carried in the words + icon, never colour alone)
   const phaseHtml = `
@@ -193,7 +222,7 @@ async function paintToday(root) {
       <button class="btn ghost" id="edit">✎ Edit my plan</button>`;
   }
 
-  root.innerHTML = coachHtml + phaseHtml + phaseSuggestHtml + reentryHtml + adaptiveHtml + journalHtml + weekReviewHtml + reviewHtml + backupHtml + nudgeHtml + mid + whyBannerHtml + whyHtml + costHtml + gameplanHtml + calisHtml + remindersCard(rem);
+  root.innerHTML = coachHtml + consistencyHtml + phaseHtml + phaseSuggestHtml + reentryHtml + adaptiveHtml + journalHtml + weekReviewHtml + reviewHtml + backupHtml + nudgeHtml + mid + whyBannerHtml + whyHtml + costHtml + gameplanHtml + calisHtml + remindersCard(rem);
 
   // wiring
   const startBtn = root.querySelector('#start');

@@ -63,6 +63,7 @@ export function greeting(ctx) {
   if (ctx.isTrainingDay && !ctx.trainedToday) {
     return pick([
       `${ctx.dayTitle} today. The body you want is on the other side of this session. Go get it. 🔥`,
+      `Show up today and the streak lives. That’s the whole job right now: not weight, not reps, just be there.`,
       `This is a building day. One hour now, ${goalLine}. No negotiation. Let’s move.`,
       `${ctx.dayTitle}. You don’t have to feel like it. You just have to start. Stand up. ⚡`,
       `Think about who you’re becoming, then go train like him. ${ctx.dayTitle} is waiting.`,
@@ -72,6 +73,7 @@ export function greeting(ctx) {
     return pick([
       `Session done. That’s a brick laid. Now the real growth: eat and sleep. 💪`,
       `You showed up today. That’s the whole game. Most people didn’t. Proud of you.`,
+      `Another one in the bank. Consistency isn’t sexy, it’s just what works. This is how it gets won.`,
       `Trained. Logged. ${ctx.gained != null && ctx.gained >= 0 ? `${ctx.gained}kg up and climbing.` : 'The line only goes up from here.'} Go refuel. 🍽️`,
     ]);
   }
@@ -80,12 +82,14 @@ export function greeting(ctx) {
       `It’s been ${ctx.daysSinceLast} days. No guilt, just truth: momentum is everything. Next session is the one that matters. 🎯`,
       `${ctx.daysSinceLast} days off. The plan still works, but only if you show up. Tomorrow, we’re back.`,
       `Drifting happens. Champions just restart faster than everyone else. Reset today.`,
+      `Consistency isn’t never missing, it’s restarting fast. Today is the restart. Go.`,
     ]);
   }
   return pick([
     `Recovery day. Muscle is built right now, not in the gym. Eat big, sleep deep. 😌`,
     `Rest is not the opposite of progress, it’s part of it. ${goalLine}. Trust the process.`,
     `No lifting today. Use it: a good meal, a real sleep. That’s how ${ctx.goalWeight}kg gets built.`,
+    `Rest today, but the habit doesn’t rest. Tomorrow you show up again. That’s the whole secret. 😌`,
   ]);
 }
 
