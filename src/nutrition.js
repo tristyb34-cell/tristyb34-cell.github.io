@@ -13,19 +13,54 @@ export const DINNER_SIZES = {
   large: { label: 'Large', cal: 950, protein: 52 },
 };
 
-// Your repeat-daily menu. Edit numbers here if a meal changes.
+// Your repeat-daily menu. Each meal carries a `recipe` (component + amount) so
+// you can see exactly how much of each thing to use. Edit numbers here if a meal changes.
 export const MEALS = [
   { id: 'smoothie', slot: 'Morning', emoji: '🥤', name: 'The Growth Smoothie',
-    desc: '80g oats · 400ml full-cream milk · 1 tbsp peanut butter · 1 banana · 1 scoop whey · 5g creatine',
+    desc: 'Blend it all, creatine stirred in.',
+    recipe: [
+      { item: 'Oats', amount: '80g' },
+      { item: 'Full-cream milk', amount: '400ml' },
+      { item: 'Peanut butter', amount: '1 tbsp' },
+      { item: 'Banana', amount: '1' },
+      { item: 'Whey', amount: '1 scoop (~30g)' },
+      { item: 'Creatine', amount: '5g' },
+    ],
     cal: 880, protein: 52, fibre: 11 },
-  { id: 'eggs', slot: 'Mid-morning', emoji: '🥚', name: '3 Boiled Eggs',
-    desc: 'Batch-boil 6–9 at once, they keep 5 days. Grab and go.', cal: 210, protein: 18, fibre: 0 },
-  { id: 'lunch', slot: 'Lunch', emoji: '🥪', name: 'Tuna Sandwich / Leftovers',
-    desc: 'Tuna mayo on wholewheat, or last night’s dinner + a Greek yoghurt.', cal: 550, protein: 45, fibre: 6 },
+  { id: 'eggs', slot: 'Mid-morning', emoji: '🥚', name: 'Boiled Eggs',
+    desc: 'Batch-boil 6–9 at once, they keep 5 days. Grab and go.',
+    recipe: [{ item: 'Boiled eggs', amount: '3' }],
+    cal: 210, protein: 18, fibre: 0 },
+  { id: 'lunch', slot: 'Lunch', emoji: '🥪', name: 'Tuna Sandwich',
+    desc: 'Mon, Wed, Fri, Sat, Sun.',
+    recipe: [
+      { item: 'Tuna (light meat), drained', amount: '1 tin (170g)' },
+      { item: 'Mayo', amount: '1 tbsp' },
+      { item: 'Wholewheat bread', amount: '2 slices' },
+    ],
+    alt: { name: 'Chicken Roll', when: 'Tue & Thu', emoji: '🍗',
+      recipe: [
+        { item: 'Grilled chicken (Spar deli)', amount: '200g' },
+        { item: 'Bread roll', amount: '1' },
+        { item: 'Mayo', amount: '1 tbsp' },
+      ], cal: 520, protein: 58 },
+    cal: 430, protein: 38, fibre: 6 },
   { id: 'snack', slot: 'Afternoon / pre-gym', emoji: '🍌', name: 'PB & Honey + Banana',
-    desc: 'Quick calories before training.', cal: 450, protein: 14, fibre: 5 },
+    desc: 'Quick calories before training.',
+    recipe: [
+      { item: 'Peanut butter', amount: '1 tbsp' },
+      { item: 'Honey', amount: '1 tsp' },
+      { item: 'Wholewheat bread', amount: '2 slices' },
+      { item: 'Banana', amount: '1' },
+    ],
+    cal: 450, protein: 14, fibre: 5 },
   { id: 'dinner', slot: 'Dinner', emoji: '🍽️', name: 'Home Dinner', dinner: true,
-    desc: 'Whatever’s cooked at home, bigger portion + extra carbs (rice/potato).', cal: 750, protein: 42, fibre: 8 },
+    desc: 'Whatever’s cooked at home.',
+    recipe: [
+      { item: 'Cooked dinner', amount: 'big portion' },
+      { item: 'Extra carbs (rice/potato)', amount: 'an added scoop' },
+    ],
+    cal: 750, protein: 42, fibre: 8 },
 ];
 
 export const FIBRE_TARGET = 30; // g/day — general health guideline, his best food-quality proxy

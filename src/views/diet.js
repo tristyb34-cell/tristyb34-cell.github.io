@@ -197,6 +197,13 @@ function renderToday(body, log, cre) {
   }));
 }
 
+// ingredient + amount list (name span first for reading order; amount right-aligned via CSS)
+function recipeList(recipe) {
+  if (!recipe || !recipe.length) return '';
+  return `<ul class="recipe">${recipe.map(r =>
+    `<li><span class="ing">${r.item}</span><span class="amt">${r.amount}</span></li>`).join('')}</ul>`;
+}
+
 function renderMenu(body) {
   let cal = 0, protein = 0;
   MEALS.forEach(m => { const mm = mealMacros(m, {}); cal += mm.cal; protein += mm.protein; });
@@ -213,8 +220,15 @@ function renderMenu(body) {
       <div class="card">
         <div class="meal-slot">${m.slot}</div>
         <div class="ex-name">${m.emoji} ${m.name}</div>
-        <div class="meal-desc">${m.desc}</div>
+        ${m.desc ? `<div class="meal-desc">${m.desc}</div>` : ''}
+        ${recipeList(m.recipe)}
         <div class="meal-macros">${m.cal} cal · ${m.protein}g protein${m.dinner ? ' (medium)' : ''}</div>
+        ${m.alt ? `
+          <div class="recipe-alt">
+            <div class="alt-label">${m.alt.when.replace(/&/g, '&amp;')} · ${m.alt.emoji} ${m.alt.name}</div>
+            ${recipeList(m.alt.recipe)}
+            <div class="meal-macros">${m.alt.cal} cal · ${m.alt.protein}g protein</div>
+          </div>` : ''}
       </div>`).join('')}
     <div class="card"><p class="lead"><strong>No blender yet?</strong> Make the smoothie as overnight oats: same ingredients in a tub in the fridge, no equipment.</p></div>
     <div class="card"><p class="lead"><strong>How treats work for you 🍟</strong> Your meals pay the rent: protein and quality calories. Snacks are spending money. Hit your meals and protein first and a packet of chips is just bonus surplus, not a setback. It only bites you if junk <em>replaces</em> a meal or kills your appetite for dinner. You’re bulking, not cutting, so relax and log it.</p></div>
