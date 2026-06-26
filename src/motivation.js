@@ -6,9 +6,9 @@
    ============================================================ */
 import { db } from './store.js';
 import { GOAL } from './data.js';
-import { getSessions } from './workouts.js';
+import { getSessions, bestE1rm } from './workouts.js';
 import { getPlan } from './plan.js';
-import { dayForDate } from './program.js';
+import { dayForDate, LIBRARY } from './program.js';
 import { getDayLog, dayTotals } from './nutrition.js';
 import { getTargets } from './profile.js';
 
@@ -43,7 +43,24 @@ export async function buildContext() {
   let volume = 0;
   for (const s of sessions) for (const e of s.entries) for (const st of e.sets) volume += (st.weight || 0) * (st.reps || 0);
 
+  // performance wins: did today's session beat a prior best (est. 1RM) on any lift?
+  const prs = [];
+  if (trainedToday) {
+    const todays = sessions.filter(s => s.date === tk);
+    const prior = sessions.filter(s => s.date < tk);
+    const seen = new Set();
+    for (const sess of todays) for (const e of sess.entries) {
+      if (seen.has(e.exId)) continue;
+      seen.add(e.exId);
+      const nowBest = bestE1rm(e);
+      let priorBest = 0;
+      for (const s of prior) { const pe = s.entries.find(x => x.exId === e.exId); if (pe) priorBest = Math.max(priorBest, bestE1rm(pe)); }
+      if (priorBest > 0 && nowBest > priorBest + 0.01) prs.push((LIBRARY[e.exId] && LIBRARY[e.exId].name) || e.exId);
+    }
+  }
+
   return {
+    prs,
     now, hour: now.getHours(), isTrainingDay: !!day, dayTitle: day ? day.title : null,
     trainedToday, daysSinceLast, totalWorkouts: sessions.length,
     trendWeight, startWeight, goalWeight: tg.goalWeight,
@@ -70,6 +87,13 @@ export function greeting(ctx) {
     ]);
   }
   if (ctx.trainedToday) {
+    if (ctx.prs && ctx.prs.length) {
+      return pick([
+        `New best on ${ctx.prs[0]} today. 🏆 That’s not just showing up, that’s getting stronger. Bank it.`,
+        `You just went heavier than you ever have on ${ctx.prs[0]}. Progress you can actually measure, that’s the good stuff. 💪`,
+        `${ctx.prs.length > 1 ? `${ctx.prs.length} personal bests today` : `A personal best on ${ctx.prs[0]}`}. The work is showing. Now feed it and sleep. 🔥`,
+      ]);
+    }
     return pick([
       `Session done. That’s a brick laid. Now the real growth: eat and sleep. 💪`,
       `You showed up today. That’s the whole game. Most people didn’t. Proud of you.`,
