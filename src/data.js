@@ -4,7 +4,7 @@
    ============================================================ */
 
 // App version watermark — bump this AND the CACHE const in sw.js together on every ship.
-export const APP_VERSION = 'v0.27.0';
+export const APP_VERSION = 'v0.28.0';
 
 // Public VAPID key for web push (safe to embed; private key lives in GitHub Secrets).
 export const VAPID_PUBLIC_KEY = 'BEznbY05xi5mY6_hwZOAamNsu5ZP-p4Fs1l2cr3M9bXuYzfbVaJpwBZTxzMxUlgrQ_mNR2zz-TCUEwsp2JwWdJo';
@@ -33,8 +33,8 @@ export const GOAL = {
   startWeight: 65,
   targetWeight: 73,        // Tom Holland lean
   dreamWeight: 80,
-  dailyCalories: 2850,
-  dailyProtein: 140,
+  dailyCalories: 2700,
+  dailyProtein: 155,
 };
 
 // My Why — the durable reasons, beyond the mirror. The reflective side

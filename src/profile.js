@@ -50,7 +50,7 @@ export function trendWeight(weighins) {
 export function baseTargets(p, bodyweight) {
   const kg = bodyweight || p.weight;
   const tdee = bmr(p, kg) * p.activity;
-  return { cal: round10(tdee + 350), protein: round5(2.0 * kg), tdee: Math.round(tdee) };
+  return { cal: round10(tdee + 150), protein: round5(2.2 * kg), tdee: Math.round(tdee) };
 }
 
 export async function getTargets() {
