@@ -3,32 +3,40 @@
    Change these variables to re-skin the whole app.
    ============================================================ */
 :root {
-  /* surfaces */
-  --bg:        #0D0E12;   /* app background, near-black charcoal */
-  --surface:   #16181F;   /* cards */
-  --surface-2: #1E212B;   /* raised / pressed cards */
-  --line:      #272B36;   /* hairline borders */
+  /* surfaces — Molten: warm near-black ramp (all AA-verified) */
+  --bg:        #0C0D11;   /* app background, warm near-black */
+  --surface:   #17181E;   /* cards */
+  --surface-2: #202128;   /* raised / pressed cards */
+  --line:      #2C2E38;   /* hairline borders */
 
   /* text */
-  --text:      #F2F3F5;
-  --text-dim:  #9AA0AD;
-  --text-faint:#5E6473;
+  --text:      #F4F5F7;   /* 17.8:1 on bg */
+  --text-dim:  #A6ABB5;   /* 7.7:1 on surface */
+  --text-faint:#7C828E;   /* 4.6:1 on surface — still real text, not decoration */
 
-  /* the energy — bold accent. swap these two to change the whole mood. */
-  --accent:    #FF5630;   /* primary: molten orange */
-  --accent-2:  #FF2D6B;   /* secondary: hot pink, used in gradients */
-  --accent-ink:#1A0B06;   /* text that sits on top of the accent */
+  /* the energy — ONE confident molten accent (no more orange→pink gradient) */
+  --accent:      #FF5A2C; /* molten orange, 6.2:1 on bg */
+  --accent-2:    #FF3B2E; /* hotter red-orange, same family, lava gradient only */
+  --accent-ink:  #1E0A03; /* dark text on accent fills, 6.1:1 on accent */
+  --accent-hover:#FF6E44;
+  --accent-press:#E84A20;
+  --accent-tint: rgba(255,90,44,.10); /* subtle accent-washed backgrounds */
   --grad: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
 
   /* feedback colours */
-  --good:      #36D399;
-  --warn:      #FFC857;
+  --good:      #35D6A0;
+  --warn:      #FFC24B;
 
   /* shape & motion */
   --r-sm: 10px;
   --r-md: 16px;
   --r-lg: 22px;
   --ease: cubic-bezier(.22,.61,.36,1);
+
+  /* depth — subtle, for a crafted (not flat) feel */
+  --shadow-1: 0 1px 2px rgba(0,0,0,.35);
+  --shadow-2: 0 10px 30px rgba(0,0,0,.5);
+  --hair-top: inset 0 1px 0 rgba(255,255,255,.045);
 
   /* safe areas for iPhone notch / home indicator */
   --safe-top: env(safe-area-inset-top, 0px);
@@ -111,22 +119,23 @@ body {
   border-radius: var(--r-md);
   padding: 18px;
   margin-bottom: 14px;
+  box-shadow: var(--shadow-1), var(--hair-top);
 }
 .card-hero {
   position: relative;
   overflow: hidden;
   border: none;
   background:
-    radial-gradient(120% 140% at 100% 0%, rgba(255,45,107,.30), transparent 55%),
-    radial-gradient(120% 140% at 0% 100%, rgba(255,86,48,.28), transparent 50%),
+    radial-gradient(120% 140% at 100% 0%, rgba(255,59,46,.30), transparent 55%),
+    radial-gradient(120% 140% at 0% 100%, rgba(255,90,44,.28), transparent 50%),
     var(--surface-2);
 }
 .eyebrow {
   font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase;
   color: var(--accent); font-weight: 700; margin-bottom: 8px;
 }
-h1.screen-title { font-size: 30px; font-weight: 850; line-height: 1.05; margin-bottom: 6px; }
-.lead { color: var(--text-dim); font-size: 15px; line-height: 1.5; }
+h1.screen-title { font-size: 31px; font-weight: 850; line-height: 1.04; letter-spacing: -.022em; margin-bottom: 6px; }
+.lead { color: var(--text-dim); font-size: 15px; line-height: 1.55; }
 .section-label {
   font-size: 13px; letter-spacing: .5px; text-transform: uppercase;
   color: var(--text-faint); font-weight: 700; margin: 22px 4px 10px;
@@ -142,12 +151,13 @@ h1.screen-title { font-size: 30px; font-weight: 850; line-height: 1.05; margin-b
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   width: 100%; padding: 16px; border: none; border-radius: var(--r-md);
-  font-size: 16px; font-weight: 800; letter-spacing: .3px;
+  font-size: 16px; font-weight: 850; letter-spacing: .2px;
   background: var(--grad); color: var(--accent-ink);
+  box-shadow: 0 6px 18px rgba(255,90,44,.28), var(--hair-top);
   transition: transform .12s var(--ease), filter .12s var(--ease);
 }
 .btn:active { transform: scale(.97); filter: brightness(1.05); }
-.btn.ghost { background: var(--surface-2); color: var(--text); border: 1px solid var(--line); }
+.btn.ghost { background: var(--surface-2); color: var(--text); border: 1px solid var(--line); box-shadow: var(--shadow-1); }
 
 /* placeholder / coming-soon block used in Phase 0 stubs */
 .stub {
@@ -187,7 +197,7 @@ h1.screen-title { font-size: 30px; font-weight: 850; line-height: 1.05; margin-b
 .tab .ic { font-size: 19px; line-height: 1; transition: transform .15s var(--ease); }
 .tab.active { color: var(--text); }
 .tab.active .ic { transform: translateY(-1px) scale(1.08); }
-.tab.active .ic.tint { filter: drop-shadow(0 0 10px rgba(255,86,48,.55)); }
+.tab.active .ic.tint { filter: drop-shadow(0 0 10px rgba(255,90,44,.55)); }
 
 /* ============================================================
    Phase 1 — training loop UI
@@ -478,7 +488,7 @@ h1.screen-title { font-size: 30px; font-weight: 850; line-height: 1.05; margin-b
    ============================================================ */
 .coach-banner {
   background:
-    radial-gradient(130% 130% at 0% 0%, rgba(255,86,48,.22), transparent 55%),
+    radial-gradient(130% 130% at 0% 0%, rgba(255,90,44,.22), transparent 55%),
     var(--surface);
   border: 1px solid var(--line); border-left: 3px solid var(--accent);
   border-radius: var(--r-md); padding: 14px 16px; margin-bottom: 12px;
@@ -506,7 +516,7 @@ h1.screen-title { font-size: 30px; font-weight: 850; line-height: 1.05; margin-b
 .celebrate-card {
   text-align: center; max-width: 320px; width: 100%;
   background:
-    radial-gradient(120% 120% at 50% 0%, rgba(255,45,107,.30), transparent 60%),
+    radial-gradient(120% 120% at 50% 0%, rgba(255,59,46,.30), transparent 60%),
     var(--surface-2);
   border: 1px solid var(--line); border-radius: var(--r-lg); padding: 32px 24px;
   transform: scale(.9); transition: transform .25s var(--ease);
@@ -734,7 +744,7 @@ h1.screen-title { font-size: 30px; font-weight: 850; line-height: 1.05; margin-b
 .alt-label { font-size: 12px; font-weight: 800; letter-spacing: .3px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 4px; }
 
 /* ---------- consistency card (the keystone metric) ---------- */
-.consistency-card { border-color: rgba(255, 86, 48, .35); }
+.consistency-card { border-color: rgba(255,90,44, .35); }
 .cons-top { display: flex; align-items: center; gap: 16px; margin-top: 6px; }
 .cons-pct { font-size: 46px; font-weight: 850; line-height: 1; font-variant-numeric: tabular-nums; }
 .cons-unit { font-size: 20px; font-weight: 800; }
@@ -794,7 +804,7 @@ h1.screen-title { font-size: 30px; font-weight: 850; line-height: 1.05; margin-b
 /* Double-progression coach line (v0.31.0) */
 .coach-target {
   margin-top: 8px; padding: 9px 11px; border-radius: var(--r-md);
-  background: rgba(255,86,48,.09); border: 1px solid rgba(255,86,48,.28);
+  background: rgba(255,90,44,.09); border: 1px solid rgba(255,90,44,.28);
   color: var(--text); font-size: 13.5px; line-height: 1.45;
 }
 .coach-target .ct-label {
@@ -821,7 +831,7 @@ h1.screen-title { font-size: 30px; font-weight: 850; line-height: 1.05; margin-b
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); color: var(--text);
 }
 .learn-row:active { transform: scale(.99); }
-.learn-row.done { border-color: rgba(255,86,48,.35); }
+.learn-row.done { border-color: rgba(255,90,44,.35); }
 .learn-ic { font-size: 20px; line-height: 1; text-align: center; }
 .learn-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .learn-title { font-size: 15px; font-weight: 700; }
@@ -829,7 +839,7 @@ h1.screen-title { font-size: 30px; font-weight: 850; line-height: 1.05; margin-b
 .learn-check { font-size: 16px; font-weight: 800; color: var(--accent); text-align: center; }
 
 /* daily lesson card on Today (reuses .ex-card) */
-.lesson-card .calis-icon { background: rgba(255,86,48,.12); }
+.lesson-card .calis-icon { background: rgba(255,90,44,.12); }
 
 /* article reader overlay */
 .reader-overlay {
