@@ -20,6 +20,7 @@ import { getGamePlan, planText, openGamePlan } from '../gameplan.js';
 import { openWeeklyReview } from '../weekreview.js';
 import { journalPrompt, markJournalPrompted } from '../journal.js';
 import { computeConsistency, consistencyCoach } from '../consistency.js';
+import { dailyArticle, openArticle } from '../knowledge.js';
 
 // strip a session to its big lifts so a "can't be bothered" day still happens
 function quickVersion(day) {
@@ -174,6 +175,19 @@ async function paintToday(root) {
       <div class="ex-status" aria-hidden="true">›</div>
     </button>`;
 
+  // a fresh lesson every day, biased to today's muscles if it's a training day
+  const lesson = dailyArticle(DOW[new Date().getDay()]);
+  const lessonHtml = `
+    <div class="section-label">Today’s lesson</div>
+    <button class="ex-card lesson-card" id="open-lesson" aria-haspopup="dialog">
+      <div class="calis-icon" aria-hidden="true">${lesson.icon || '📚'}</div>
+      <div class="ex-meta">
+        <div class="ex-name">${lesson.title}</div>
+        <div class="ex-sub">${lesson.teaser}</div>
+      </div>
+      <div class="ex-status" aria-hidden="true">›</div>
+    </button>`;
+
   let mid;
   if (day) {
     const mins = estimateMinutes(trainDay);
@@ -222,7 +236,7 @@ async function paintToday(root) {
       <button class="btn ghost" id="edit">✎ Edit my plan</button>`;
   }
 
-  root.innerHTML = coachHtml + consistencyHtml + phaseHtml + phaseSuggestHtml + reentryHtml + adaptiveHtml + journalHtml + weekReviewHtml + reviewHtml + backupHtml + nudgeHtml + mid + whyBannerHtml + whyHtml + costHtml + gameplanHtml + calisHtml + remindersCard(rem);
+  root.innerHTML = coachHtml + consistencyHtml + phaseHtml + phaseSuggestHtml + reentryHtml + adaptiveHtml + journalHtml + weekReviewHtml + reviewHtml + backupHtml + nudgeHtml + mid + lessonHtml + whyBannerHtml + whyHtml + costHtml + gameplanHtml + calisHtml + remindersCard(rem);
 
   // wiring
   const startBtn = root.querySelector('#start');
@@ -246,6 +260,8 @@ async function paintToday(root) {
   if (whyBtn) whyBtn.addEventListener('click', () => openWhy(whyBtn, () => paintToday(root)));
   const costBtn = root.querySelector('#open-cost');
   if (costBtn) costBtn.addEventListener('click', () => openCost(costBtn, () => paintToday(root)));
+  const lessonBtn = root.querySelector('#open-lesson');
+  if (lessonBtn) lessonBtn.addEventListener('click', () => openArticle(lesson.id)); // no repaint: focus returns to this card on close
   const jBtn = root.querySelector('#journal-check');
   if (jBtn) jBtn.addEventListener('click', () => {
     sessionStorage.setItem('dax_focus_journal', '1'); // tell Journal to focus the box on arrival

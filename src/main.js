@@ -8,12 +8,14 @@ import { renderHistory } from './views/history.js';
 import { renderDiet } from './views/diet.js';
 import { renderProgress } from './views/progress.js';
 import { renderJournal } from './views/journal.js';
+import { renderLearn } from './views/learn.js';
 
 const TABS = [
   { id: 'today',    label: 'Today',    icon: '⚡', tint: true,  render: renderToday },
   { id: 'plan',     label: 'Plan',     icon: '📋', tint: false, render: renderPlan },
   { id: 'history',  label: 'History',  icon: '📊', tint: false, render: renderHistory },
   { id: 'diet',     label: 'Fuel',     icon: '🍽️', tint: false, render: renderDiet },
+  { id: 'learn',    label: 'Learn',    icon: '📚', tint: false, render: renderLearn },
   { id: 'journal',  label: 'Journal',  icon: '📓', tint: false, render: renderJournal },
   { id: 'progress', label: 'Progress', icon: '📸', tint: false, render: renderProgress },
 ];
@@ -24,7 +26,7 @@ const tabbarEl = document.getElementById('tabbar');
 function buildTabbar(activeId) {
   tabbarEl.innerHTML = TABS.map(t => `
     <button class="tab ${t.id === activeId ? 'active' : ''}" data-tab="${t.id}">
-      <span class="ic ${t.tint ? 'tint' : ''}">${t.icon}</span>
+      <span class="ic ${t.tint ? 'tint' : ''}" aria-hidden="true">${t.icon}</span>
       <span>${t.label}</span>
     </button>
   `).join('');
