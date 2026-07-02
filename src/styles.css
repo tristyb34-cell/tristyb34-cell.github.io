@@ -790,3 +790,15 @@ h1.screen-title { font-size: 30px; font-weight: 850; line-height: 1.05; margin-b
 
 .ctrl-row { display: flex; gap: 10px; margin: 16px 0 6px; }
 .ctrl-row .pill { flex: 1; text-align: center; padding: 12px; font-size: 14px; }
+
+/* Double-progression coach line (v0.31.0) */
+.coach-target {
+  margin-top: 8px; padding: 9px 11px; border-radius: var(--r-md);
+  background: rgba(255,86,48,.09); border: 1px solid rgba(255,86,48,.28);
+  color: var(--text); font-size: 13.5px; line-height: 1.45;
+}
+.coach-target .ct-label {
+  display: inline-block; font-size: 10.5px; font-weight: 800;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--accent);
+  margin-right: 6px;
+}

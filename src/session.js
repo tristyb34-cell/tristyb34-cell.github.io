@@ -125,6 +125,7 @@ async function renderStep(idx) {
     <div class="coach">
       <div class="coach-head">🎯 ${sug.headline}</div>
       <div class="coach-detail">${sug.detail}</div>
+      ${sug.target ? `<div class="coach-target"><span class="ct-label">Progression</span> ${sug.target}</div>` : ''}
       ${sug.lastStr ? `<div class="coach-last">Last time: ${sug.lastStr}</div>` : ''}
     </div>
 
