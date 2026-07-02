@@ -1,6 +1,6 @@
 /* DAX service worker — offline app shell.
    Bump CACHE when you ship changes so clients pull fresh files. */
-const CACHE = 'dax-v0.28.0';
+const CACHE = 'dax-v0.30.0';
 
 const ASSETS = [
   '/',
@@ -14,6 +14,7 @@ const ASSETS = [
   '/src/plan.js',
   '/src/equipment.js',
   '/src/workouts.js',
+  '/src/safety.js',
   '/src/session.js',
   '/src/editor.js',
   '/src/charts.js',

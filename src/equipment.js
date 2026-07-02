@@ -6,6 +6,7 @@
 import { db } from './store.js';
 import { LIBRARY, libraryByGroup } from './program.js';
 import { getPlan, savePlan } from './plan.js';
+import { isSpotter } from './safety.js';
 
 // equipment categories that actually appear in the library, friendliest order
 export const EQUIPMENT_TYPES = [
@@ -49,7 +50,8 @@ export function isMissing(ex, gym) {
 export function swapCandidates(currentId, gym) {
   const cur = LIBRARY[currentId];
   if (!cur) return [];
-  const pool = (libraryByGroup()[cur.group] || []).filter(x => x.id !== currentId);
+  // never suggest a spotter lift — Tristan trains alone
+  const pool = (libraryByGroup()[cur.group] || []).filter(x => x.id !== currentId && !isSpotter(x.id));
   return pool.sort((a, b) => {
     const aOk = hasEquipment(a, gym), bOk = hasEquipment(b, gym);
     if (aOk !== bOk) return aOk ? -1 : 1;

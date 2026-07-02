@@ -744,3 +744,49 @@ h1.screen-title { font-size: 30px; font-weight: 850; line-height: 1.05; margin-b
 .cons-goal { margin: 14px 0 0; font-weight: 750; font-size: 14px; color: var(--text); }
 .cons-coach { margin: 10px 0 0; color: var(--text-dim); font-size: 13.5px; line-height: 1.5; }
 .cons-bigtitle { font-size: 26px; font-weight: 850; margin: 2px 0 8px; }
+
+/* ============================================================
+   Guided session runner (v0.29.0)
+   ============================================================ */
+.step-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.step-count { font-size: 12.5px; font-weight: 700; color: var(--text-faint); letter-spacing: .04em; text-transform: uppercase; }
+
+.step-pills { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 16px; }
+.step-pill {
+  width: 30px; height: 30px; border-radius: 999px; flex: 0 0 auto;
+  background: var(--surface-2); color: var(--text-dim);
+  border: 1px solid var(--line); font-size: 13px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.step-pill.cur { background: var(--grad); color: var(--accent-ink); border: none; }
+.step-pill.done { background: transparent; color: var(--accent); border-color: var(--accent); }
+
+.safe-note {
+  background: var(--surface); border: 1px solid var(--line);
+  border-left: 3px solid var(--accent); border-radius: var(--r-md);
+  padding: 10px 12px; font-size: 13.5px; color: var(--text-dim); margin-bottom: 14px;
+}
+.safe-note strong { color: var(--text); }
+
+.working { margin: 4px 0 6px; }
+.working label { display: block; font-size: 12px; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; }
+.working-in { display: flex; align-items: center; gap: 8px; }
+.working-in .stp {
+  width: 46px; height: 46px; border-radius: var(--r-md); flex: 0 0 auto;
+  background: var(--surface-2); color: var(--text); border: 1px solid var(--line);
+  font-size: 22px; font-weight: 700; cursor: pointer;
+}
+.working-in .stp:active { transform: scale(.94); }
+.inp.w-big {
+  flex: 1; text-align: center; font-size: 22px; font-weight: 700;
+  padding: 10px; background: var(--surface); color: var(--text);
+  border: 1px solid var(--line); border-radius: var(--r-md); min-width: 0;
+}
+.working-unit { color: var(--text-faint); font-weight: 700; }
+.working-hint { font-size: 12.5px; color: var(--text-faint); margin: 8px 2px 0; }
+
+.btn.allset { margin-top: 12px; background: var(--surface-2); color: var(--text); border: 1px solid var(--accent); }
+.btn.small { padding: 11px; font-size: 13.5px; }
+
+.ctrl-row { display: flex; gap: 10px; margin: 16px 0 6px; }
+.ctrl-row .pill { flex: 1; text-align: center; padding: 12px; font-size: 14px; }

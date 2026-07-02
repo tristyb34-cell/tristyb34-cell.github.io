@@ -50,10 +50,10 @@ const WEEKEND = [
 ];
 const SUNDAY_REVIEW = { id: 'weekreview', t: '19:00', title: 'Your week in review 📅', body: 'Open DAX to see your last 7 days and next week’s job.' };
 
-// build today's list, gating train to his training days (Tue/Thu/Fri/Sun)
+// build today's list, gating train to his training days (Tue/Thu/Fri/Sat)
 let list;
-if (day === 0) { list = [...WEEKEND, SUNDAY_REVIEW]; }          // Sunday: trains + weekly review
-else if (day === 6) { list = WEEKEND.filter(i => i.id !== 'train'); } // Saturday: rest
+if (day === 0) { list = [...WEEKEND.filter(i => i.id !== 'train'), SUNDAY_REVIEW]; } // Sunday: rest + weekly review
+else if (day === 6) { list = WEEKEND; }                        // Saturday: trains
 else { const trains = day === 2 || day === 4 || day === 5; list = WEEKDAY.filter(i => i.id !== 'train' || trains); }
 
 const WINDOW = 20; // minutes — absorbs GitHub cron drift; crons are >=30min apart so only one matches
