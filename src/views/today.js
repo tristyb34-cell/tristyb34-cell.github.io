@@ -75,17 +75,6 @@ async function paintToday(root) {
           ? `Tendon block · week ${re.week} of ${re.totalWeeks}. Weights held, form first. Your tissue is catching up to your strength.`
           : `Tendon block · week ${re.week} of ${re.totalWeeks}. Climbing now, but stay honest, ${re.daysLeft} days till the brakes are fully off.`}</span></div>`
     : '';
-  const calisHtml = `
-    <div class="section-label">Calisthenics</div>
-    <button class="ex-card calis-card" id="calis">
-      <div class="calis-icon">${treeOpen ? '🌳' : '🔒'}</div>
-      <div class="ex-meta">
-        <div class="ex-name">Skill tree${treeOpen ? ' · unlocked' : ''}</div>
-        <div class="ex-sub">${treeOpen ? 'Grind progressions toward pull-ups, dips, muscle-ups.' : `${ctx.totalWorkouts}/${TREE_UNLOCK_AT} sessions to unlock`}</div>
-      </div>
-      <div class="ex-status">›</div>
-    </button>`;
-
   const coachHtml = `
     <div class="coach-banner">
       <div class="coach-eyebrow">YOUR COACH</div>
@@ -97,15 +86,15 @@ async function paintToday(root) {
   const reviewHtml = reviewDue ? `<div class="nudge action-nudge"><span class="nudge-ic">📋</span><span>Your monthly review is ready. See the month in one place.</span><button class="mini-btn" id="open-review">Open</button></div>` : '';
   const weekReviewHtml = weekReviewDue ? `<div class="nudge action-nudge"><span class="nudge-ic">📅</span><span>Your week in review is ready, see the last 7 days.</span><button class="mini-btn" id="open-weekreview">Open</button></div>` : '';
   const gameplanHtml = `
-    <div class="section-label">Protein game plan</div>
+    <h2 class="section-label">Protein game plan</h2>
     ${gp.length
-      ? `<div class="card gp-card">
+      ? `<div class="card gp-card setup-card">
           <ul class="gp-active">${gp.map(id => `<li>${planText(id)}</li>`).join('')}</ul>
           <button class="btn ghost" id="gp-edit" aria-haspopup="dialog">Edit my plan</button>
         </div>`
-      : `<div class="card">
+      : `<div class="card setup-card">
           <p class="lead" style="margin-bottom:12px;">Willpower fades, a plan doesn’t. Set a few if-then rules and you’ll hit protein without thinking about it.</p>
-          <button class="btn" id="gp-edit" aria-haspopup="dialog">Set my protein game plan</button>
+          <button class="btn ghost" id="gp-edit" aria-haspopup="dialog">Set my protein game plan</button>
         </div>`}`;
   const backupHtml = backupDue ? `<div class="nudge action-nudge"><span class="nudge-ic">💾</span><span>You’ve got real data now. Back it up so it can never vanish.</span><button class="mini-btn" id="do-backup">Back up</button></div>` : '';
   const journalHtml = jPrompt ? `<div class="nudge action-nudge"><span class="nudge-ic" aria-hidden="true">📓</span><span>${jPrompt.text}</span><button class="mini-btn" id="journal-check">Check in</button></div>` : '';
@@ -154,39 +143,32 @@ async function paintToday(root) {
   const whyBannerHtml = !day
     ? `<div class="nudge why-banner"><span class="nudge-ic" aria-hidden="true">🛡️</span><span><strong>${whyOnly.head}.</strong> ${whyOnly.text}</span></div>`
     : '';
-  const whyHtml = `
-    <div class="section-label">Beyond the mirror</div>
-    <button class="ex-card why-card" id="open-why" aria-haspopup="dialog">
-      <div class="calis-icon" aria-hidden="true">🛡️</div>
-      <div class="ex-meta">
-        <div class="ex-name">My Why</div>
-        <div class="ex-sub">${whyOnly.head}</div>
-      </div>
-      <div class="ex-status" aria-hidden="true">›</div>
-    </button>`;
-  const costHtml = `
-    <div class="section-label">Know the cost</div>
-    <button class="ex-card" id="open-cost" aria-haspopup="dialog">
-      <div class="calis-icon" aria-hidden="true">⚖️</div>
-      <div class="ex-meta">
-        <div class="ex-name">Know the cost</div>
-        <div class="ex-sub">What one slip does, vs ten. No fear, just facts.</div>
-      </div>
-      <div class="ex-status" aria-hidden="true">›</div>
-    </button>`;
-
-  // a fresh lesson every day, biased to today's muscles if it's a training day
+  // Explore: the four browse cards collapsed into one compact tile grid (declutter, nothing lost)
   const lesson = dailyArticle(DOW[new Date().getDay()]);
-  const lessonHtml = `
-    <div class="section-label">Today’s lesson</div>
-    <button class="ex-card lesson-card" id="open-lesson" aria-haspopup="dialog">
-      <div class="calis-icon" aria-hidden="true">${lesson.icon || '📚'}</div>
-      <div class="ex-meta">
-        <div class="ex-name">${lesson.title}</div>
-        <div class="ex-sub">${lesson.teaser}</div>
-      </div>
-      <div class="ex-status" aria-hidden="true">›</div>
-    </button>`;
+  const exploreHtml = `
+    <h2 class="section-label" id="explore-h">Explore</h2>
+    <ul class="tile-grid" aria-labelledby="explore-h">
+      <li><button class="tile" id="open-lesson" aria-haspopup="dialog">
+        <span class="tile-ic" aria-hidden="true">${lesson.icon || '📚'}</span>
+        <span class="tile-title">Today’s lesson</span>
+        <span class="tile-sub">${lesson.title}</span>
+      </button></li>
+      <li><button class="tile" id="open-why" aria-haspopup="dialog">
+        <span class="tile-ic" aria-hidden="true">🛡️</span>
+        <span class="tile-title">My Why</span>
+        <span class="tile-sub">${whyOnly.head}</span>
+      </button></li>
+      <li><button class="tile" id="open-cost" aria-haspopup="dialog">
+        <span class="tile-ic" aria-hidden="true">⚖️</span>
+        <span class="tile-title">Know the cost</span>
+        <span class="tile-sub">One slip vs ten</span>
+      </button></li>
+      <li><button class="tile ${treeOpen ? '' : 'locked'}" id="calis" aria-haspopup="dialog">
+        <span class="tile-ic" aria-hidden="true">${treeOpen ? '🌳' : '🔒'}</span>
+        <span class="tile-title">Skill tree</span>
+        <span class="tile-sub">${treeOpen ? 'Unlocked' : `${ctx.totalWorkouts}/${TREE_UNLOCK_AT} to unlock`}</span>
+      </button></li>
+    </ul>`;
 
   let mid;
   if (day) {
@@ -236,7 +218,7 @@ async function paintToday(root) {
       <button class="btn ghost" id="edit">✎ Edit my plan</button>`;
   }
 
-  root.innerHTML = coachHtml + consistencyHtml + phaseHtml + phaseSuggestHtml + reentryHtml + adaptiveHtml + journalHtml + weekReviewHtml + reviewHtml + backupHtml + nudgeHtml + mid + lessonHtml + whyBannerHtml + whyHtml + costHtml + gameplanHtml + calisHtml + remindersCard(rem);
+  root.innerHTML = coachHtml + consistencyHtml + phaseHtml + phaseSuggestHtml + reentryHtml + adaptiveHtml + journalHtml + weekReviewHtml + reviewHtml + backupHtml + nudgeHtml + mid + whyBannerHtml + exploreHtml + gameplanHtml + remindersCard(rem);
 
   // wiring
   const startBtn = root.querySelector('#start');
@@ -256,10 +238,11 @@ async function paintToday(root) {
   root.querySelector('#calis').addEventListener('click', () => openSkillTree(root));
   const phaseBtn = root.querySelector('#phase-advance');
   if (phaseBtn) phaseBtn.addEventListener('click', async () => { await advancePhase(phase.suggest.to); paintToday(root); });
+  // no repaint on close → focus returns cleanly to the tile (fixes the focus-to-body bug)
   const whyBtn = root.querySelector('#open-why');
-  if (whyBtn) whyBtn.addEventListener('click', () => openWhy(whyBtn, () => paintToday(root)));
+  if (whyBtn) whyBtn.addEventListener('click', () => openWhy(whyBtn));
   const costBtn = root.querySelector('#open-cost');
-  if (costBtn) costBtn.addEventListener('click', () => openCost(costBtn, () => paintToday(root)));
+  if (costBtn) costBtn.addEventListener('click', () => openCost(costBtn));
   const lessonBtn = root.querySelector('#open-lesson');
   if (lessonBtn) lessonBtn.addEventListener('click', () => openArticle(lesson.id)); // no repaint: focus returns to this card on close
   const jBtn = root.querySelector('#journal-check');
@@ -298,10 +281,10 @@ function remindersCard(rem) {
   if (rem.perm === 'unsupported') return '';
   if (!rem.on) {
     return `
-      <div class="section-label">Coach reminders</div>
-      <div class="card">
+      <h2 class="section-label">Coach reminders</h2>
+      <div class="card setup-card">
         <p class="lead" style="margin-bottom:12px;">Get nudged to eat, take creatine, and train at your set times (when you open the app and one’s due).</p>
-        <button class="btn" id="notify-on">🔔 Turn on coach reminders</button>
+        <button class="btn ghost" id="notify-on">🔔 Turn on coach reminders</button>
         <p class="coach-last" style="margin-top:10px;">Best-effort: fires when you open the app. For guaranteed buzzes, also set a couple of iPhone alarms. Edit times in Fuel → Times.</p>
       </div>`;
   }
@@ -315,8 +298,8 @@ function remindersCard(rem) {
       </details>`
     : '';
   return `
-    <div class="section-label">Coach reminders · on</div>
-    <div class="card">
+    <h2 class="section-label">Coach reminders · on</h2>
+    <div class="card setup-card">
       <p class="lead" style="margin-bottom:12px;">Your timetable lives in <strong>Fuel → Times</strong>. Edit any time there.</p>
       ${pushSetup}
       <button class="btn ghost" id="notify-off">Turn off reminders</button>

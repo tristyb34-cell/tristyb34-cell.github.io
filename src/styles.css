@@ -875,3 +875,28 @@ h1.screen-title { font-size: 31px; font-weight: 850; line-height: 1.04; letter-s
 .btn.got-it:focus-visible,
 .tab:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
 .reader-title:focus-visible { outline: none; } /* focused programmatically for context, not a control */
+
+/* ============================================================
+   Today declutter — Explore tile grid + calmer setup (v0.34.0)
+   ============================================================ */
+.tile-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  list-style: none; padding: 0; margin: 0 0 16px;
+}
+.tile {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+  text-align: left; width: 100%; min-height: 96px; padding: 14px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md);
+  color: var(--text); box-shadow: var(--shadow-1), var(--hair-top);
+  transition: transform .12s var(--ease), border-color .15s var(--ease);
+}
+.tile:active { transform: scale(.98); }
+.tile.locked { opacity: .78; }
+.tile-ic { font-size: 23px; line-height: 1; }
+.tile-title { font-size: 14.5px; font-weight: 750; line-height: 1.2; }
+.tile-sub { font-size: 12px; color: var(--text-dim); line-height: 1.32; }
+.tile:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
+/* compact setup cards at the foot of Today */
+.setup-card { padding: 15px; }
+.setup-card .lead { font-size: 13.5px; margin-bottom: 12px; }
