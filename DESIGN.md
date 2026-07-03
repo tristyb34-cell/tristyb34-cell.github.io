@@ -3,28 +3,34 @@
 The whole app is themed from CSS custom properties at the top of `src/styles.css`.
 Change the tokens, re-skin everything. Never hardcode a colour in a component; use a token.
 
-## Direction: "Molten"
-Energetic dark. Warm near-black surfaces, one confident molten-orange accent (no
-two-colour gradients as a crutch, the orange→red gradient is reserved for the hero
-and primary buttons only). Crafted, not flat: subtle shadows + a 1px top highlight
-give cards depth.
+## Direction: "Indigo Night"
+Cool, premium dark. Deep indigo-black surfaces, a periwinkle→violet accent. Crafted,
+not flat: subtle shadows + a 1px top highlight give cards depth, and a light motion
+layer (staggered entrance, hero sheen, tile lift) makes it feel alive. The gradient
+(periwinkle→violet) is reserved for the hero and primary buttons only.
 
 ## Colour (all pairs WCAG AA verified)
 | Token | Hex | Use |
 | --- | --- | --- |
-| `--bg` | `#0C0D11` | app background |
-| `--surface` | `#17181E` | cards |
-| `--surface-2` | `#202128` | raised / pressed |
-| `--line` | `#2C2E38` | hairline borders |
-| `--text` | `#F4F5F7` | primary text (17.8:1 on bg) |
-| `--text-dim` | `#A6ABB5` | secondary text (7.7:1 on surface) |
-| `--text-faint` | `#7C828E` | least-important text (4.6:1 — still readable, not decoration) |
-| `--accent` | `#FF5A2C` | the one accent (6.2:1 on bg; ok as small text) |
-| `--accent-2` | `#FF3B2E` | hotter red-orange, lava gradient only |
-| `--accent-ink` | `#1E0A03` | dark text on accent fills (6.1:1 on accent) |
-| `--accent-hover` / `--accent-press` | `#FF6E44` / `#E84A20` | interaction states |
-| `--accent-tint` | `rgba(255,90,44,.10)` | subtle accent-washed backgrounds |
+| `--bg` | `#0A0B14` | app background (deep indigo-black) |
+| `--surface` | `#151726` | cards |
+| `--surface-2` | `#1E2136` | raised / pressed |
+| `--line` | `#2E3350` | hairline borders |
+| `--text` | `#EEF0FA` | primary text (17.3:1 on bg) |
+| `--text-dim` | `#A6ABC8` | secondary text (7.9:1 on surface) |
+| `--text-faint` | `#7A80A0` | least-important text (4.6:1 — still readable, not decoration) |
+| `--accent` | `#7C8CFF` | the one accent (6.6:1 on bg; ok as small text) |
+| `--accent-2` | `#B57BFF` | violet, gradient only |
+| `--accent-ink` | `#0A0B1A` | dark text on accent fills (6.6:1 on accent) |
+| `--accent-hover` / `--accent-press` | `#93A0FF` / `#5F6FE0` | interaction states |
+| `--accent-tint` | `rgba(124,140,255,.10)` | subtle accent-washed backgrounds |
 | `--good` / `--warn` | `#35D6A0` / `#FFC24B` | semantics |
+
+## Motion (premium feel, v0.35+)
+- Staggered rise: each screen's top-level cards cascade in on load (`.view > *`, ~50ms steps).
+- Hero sheen: a slow light sweep across `.card-hero` every 7s.
+- Primary CTA breathes (soft accent glow); tiles lift on hover, cards press on tap.
+- ALL motion is wrapped in `@media (prefers-reduced-motion: reduce)` → off. Keep it that way.
 
 Rule: body text must clear 4.5:1 on its background; accent as UI/large ≥3:1; dark
 `--accent-ink` on any accent fill ≥4.5:1. Verify with the WCAG check before shipping.
