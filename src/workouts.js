@@ -95,6 +95,29 @@ export function repBottom(reps) {
   return one ? Number(one[1]) : 0;
 }
 
+/* Smart weight jump per exercise. Machines and cables move in big stack plates,
+   barbells in small plates, dumbbells in pairs. A flat 2.5kg is meaningless on a
+   leg press and huge on a lateral raise, so the jump matches the tool. Editable
+   per exercise (stored override wins). */
+const INC_BY_EQUIP = {
+  'machine': 5, 'cable': 5, 'barbell': 2.5, 'e-z curl bar': 2.5,
+  'dumbbell': 2, 'kettlebells': 4, 'bands': 2.5, 'body only': 2.5,
+};
+const INC_OVERRIDE_ID = { 'Leg_Press': 10 }; // heavy stack, 5kg is barely a nudge
+export async function weightIncrement(exId) {
+  const ov = (await db.get('increments', {})) || {};
+  if (ov[exId]) return Number(ov[exId]);
+  if (INC_OVERRIDE_ID[exId]) return INC_OVERRIDE_ID[exId];
+  const ex = LIBRARY[exId];
+  return (ex && INC_BY_EQUIP[ex.equipment]) || 2.5;
+}
+export async function setIncrement(exId, kg) {
+  const ov = (await db.get('increments', {})) || {};
+  ov[exId] = Number(kg);
+  await db.set('increments', ov);
+  return ov;
+}
+
 export async function lastPerformance(exId) {
   const sessions = await getSessions();
   for (let i = sessions.length - 1; i >= 0; i--) {
@@ -111,22 +134,25 @@ export async function suggestion(item) {
   const hi = repTarget(item.reps);
   const lo = repBottom(item.reps);
   const re = await getReentry();
+  const inc = await weightIncrement(item.id);
   // how close to failure this session: ease off during re-entry, push once adapted
   const rirCue = re.active ? 'leave 2-3 reps in the tank' : 'leave 1-2 reps in the tank';
   const units = ex.type === 'timed' ? 'seconds' : 'reps';
+  const base = { last, lastStr: null, lastWeight: null, suggestedWeight: null, repGoal: hi || null, readyToLevelUp: false, inc, lo, hi };
 
   if (!last) {
     return {
+      ...base, last: null,
       headline: re.active ? 'First time · ease in' : 'First time',
       detail: re.active
         ? `You’re in the tendon block (week ${re.week} of ${re.totalWeeks}). Go lighter than your ego wants. Tendons before weight.`
         : `Pick a weight you could do for about ${item.reps} ${units}.`,
       target: `Aim for ${item.reps} ${units} and ${rirCue}. Whatever weight that is becomes your baseline to beat.`,
-      last: null, lastStr: null, suggestedWeight: null,
     };
   }
 
   const topW = Math.max(0, ...last.sets.map(s => s.weight || 0));
+  const bestReps = Math.max(0, ...last.sets.map(s => s.reps || 0));
   const hitAll = last.sets.length >= item.sets && last.sets.every(s => (s.reps || 0) >= hi);
   const lastStr = last.sets.map(s => (s.weight ? `${s.weight}kg×${s.reps}` : `${s.reps}`)).join(', ');
 
@@ -137,42 +163,38 @@ export async function suggestion(item) {
   // tendon block weeks 1-2: hard hold on load, build reps and connective tissue first
   if (re.holdLoad && ex.type === 'weight') {
     return {
+      ...base, lastStr, lastWeight: topW, suggestedWeight: topW,
+      repGoal: Math.min(hi || bestReps + 1, bestReps + 1) || hi,
       headline: `Hold ${topW}kg · tendon block`,
       detail: `Week ${re.week} of ${re.totalWeeks}. Muscles are ready, tendons aren’t. Same load, clean reps.`,
       target: `Stay at ${topW}kg and build toward ${hi} ${units} on all ${item.sets} sets, ${rirCue}. Load climbs after the block.`,
-      last, lastStr, suggestedWeight: topW,
     };
   }
 
   if (ex.type === 'weight') {
-    if (hitAll) {
-      const detail = minRir !== null && minRir >= 2
-        ? `You topped the range at ${topW}kg with ~${minRir} left in the tank. Add 2.5kg, maybe more.`
-        : `You hit ${hi} on every set at ${topW}kg. Range beaten.`;
+    const levelUp = hitAll || (minRir !== null && minRir >= 3);
+    if (levelUp) {
+      const detail = hitAll
+        ? (minRir !== null && minRir >= 2
+            ? `You topped the range at ${topW}kg with ~${minRir} still in the tank. Time to add weight.`
+            : `You hit ${hi} on every set at ${topW}kg. Range beaten — level up.`)
+        : `Last time you stopped with ${minRir} reps still in the tank. That’s too easy — go up.`;
       return {
-        headline: `Go heavier → ${topW + 2.5}kg`, detail,
-        target: `Move to ${topW + 2.5}kg and start climbing the reps again from ~${lo}, ${rirCue}.`,
-        last, lastStr, suggestedWeight: topW + 2.5,
+        ...base, lastStr, lastWeight: topW, suggestedWeight: topW + inc, repGoal: lo || null, readyToLevelUp: true,
+        headline: `Level up → ${topW + inc}kg`, detail,
+        target: `Add ${inc}kg to ${topW + inc}kg and start climbing the reps again from ${lo}, ${rirCue}.`,
       };
     }
-    // didn't top the range, but if it was clearly too easy, push anyway
-    if (minRir !== null && minRir >= 3) {
-      return {
-        headline: `Go heavier → ${topW + 2.5}kg`,
-        detail: `Last time you stopped with ${minRir} reps still in the tank, that’s too easy.`,
-        target: `Jump to ${topW + 2.5}kg for ${item.reps} ${units}, ${rirCue}.`,
-        last, lastStr, suggestedWeight: topW + 2.5,
-      };
-    }
+    // stay at the weight, beat the reps (double progression)
     return {
-      headline: `Beat ${topW}kg`,
-      detail: `Same weight, more reps than last time.`,
-      target: `Stay at ${topW}kg. Get all ${item.sets} sets to ${hi} ${units} (${rirCue}) — then next time the weight goes up 2.5kg.`,
-      last, lastStr, suggestedWeight: topW,
+      ...base, lastStr, lastWeight: topW, suggestedWeight: topW, repGoal: Math.min(hi || bestReps + 1, bestReps + 1) || hi,
+      headline: `Beat ${topW}kg × ${bestReps}`,
+      detail: 'Same weight, one more rep than last time.',
+      target: `Stay at ${topW}kg and push every set toward ${hi} ${units} (${rirCue}). Top the range and next time you add ${inc}kg.`,
     };
   }
   // bodyweight / timed
   return hitAll
-    ? { headline: 'Add reps / time', detail: 'You topped the range.', target: `Beat ${hi} ${units} on your best set, ${rirCue}.`, last, lastStr, suggestedWeight: null }
-    : { headline: 'Match or beat it', detail: 'Equal or better your last effort.', target: `Push toward ${hi} ${units} per set, close to failure.`, last, lastStr, suggestedWeight: null };
+    ? { ...base, lastStr, repGoal: (bestReps + 1) || hi, headline: 'Add reps / time', detail: 'You topped the range.', target: `Beat ${hi} ${units} on your best set, ${rirCue}.` }
+    : { ...base, lastStr, repGoal: hi, headline: 'Match or beat it', detail: 'Equal or better your last effort.', target: `Push toward ${hi} ${units} per set, close to failure.` };
 }

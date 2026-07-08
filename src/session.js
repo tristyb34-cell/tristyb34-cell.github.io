@@ -8,10 +8,11 @@
    ============================================================ */
 import { LIBRARY } from './program.js';
 import { WARMUP, COOLDOWN } from './data.js';
-import { startActive, getActive, logSet, finishActive, suggestion, setEffort, repTarget } from './workouts.js';
+import { startActive, getActive, logSet, finishActive, suggestion, setEffort, repTarget, setIncrement } from './workouts.js';
 import { isSpotter, safeSub } from './safety.js';
 import { swapCandidates, getGym, hasEquipment } from './equipment.js';
 import { getPlan, savePlan } from './plan.js';
+import { announce } from './a11y.js';
 
 const stretchList = (items) => `<div class="stretch-list">${items.map(s =>
   `<div class="stretch-item"><span class="stretch-dot">›</span><div><div class="nm">${s.name}</div><div class="dt">${s.detail}</div></div><span class="du">${s.dur}</span></div>`).join('')}</div>`;
@@ -19,6 +20,10 @@ const stretchList = (items) => `<div class="stretch-list">${items.map(s =>
 let S = null;          // { root, day, idx, active }
 let frameTimer = null;
 let restTimer = null;
+
+// Parse a weight the iPhone keypad might give with EITHER separator. SA locale
+// keypads often emit a comma, which type=number silently rejected — hence 7.5 → 8.
+const num = (v) => { const n = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isNaN(n) ? 0 : n; };
 
 function clearTimers() {
   if (frameTimer) { clearInterval(frameTimer); frameTimer = null; }
@@ -65,7 +70,7 @@ function applySafety(idx) {
 /* ============================================================
    The exercise step
    ============================================================ */
-async function renderStep(idx) {
+async function renderStep(idx, focusSel) {
   clearTimers();
   const total = S.day.items.length;
   if (idx >= total) return finishFlow();
@@ -84,8 +89,11 @@ async function renderStep(idx) {
   const complete = setsDone(item.id) >= N;
   const showWeight = ex.type === 'weight';
   const repLabel = ex.type === 'timed' ? 'secs' : 'reps';
-  const target = repTarget(item.reps);
-  const working = sug.suggestedWeight ?? '';
+  const target = sug.repGoal || repTarget(item.reps);
+  const working = sug.lastWeight ?? '';   // prefill to what you actually lifted last time
+  const tryStr = showWeight && sug.suggestedWeight != null
+    ? `${sug.suggestedWeight}kg × ${sug.repGoal}`
+    : (sug.repGoal ? `${sug.repGoal} ${repLabel}` : '');
   const isFirstOfSession = exercisesDone() === 0 && setsDone(item.id) === 0;
 
   // preselect effort if all logged sets share one
@@ -100,8 +108,10 @@ async function renderStep(idx) {
 
     <div class="step-pills">
       ${S.day.items.map((it, i) => {
-        const st = itemComplete(i) ? 'done' : (i === idx ? 'cur' : '');
-        return `<button class="step-pill ${st}" data-jump="${i}" aria-label="Exercise ${i + 1}">${itemComplete(i) ? '✓' : i + 1}</button>`;
+        const done = itemComplete(i);
+        const st = done ? 'done' : (i === idx ? 'cur' : '');
+        const lbl = `Exercise ${i + 1}${done ? ', completed' : (i === idx ? ', current' : '')}`;
+        return `<button class="step-pill ${st}" data-jump="${i}" aria-label="${lbl}"${i === idx ? ' aria-current="step"' : ''}>${done ? '✓' : i + 1}</button>`;
       }).join('')}
     </div>
 
@@ -115,7 +125,7 @@ async function renderStep(idx) {
     <div class="ex-hero">
       <img id="frame" class="ex-hero-img" src="${ex.frames[0]}" alt="${ex.name}" />
       <div class="ex-hero-cap">
-        <div class="ex-name big">${ex.name}</div>
+        <div class="ex-name big" id="ex-name" tabindex="-1">${ex.name}</div>
         <div class="ex-sub">${N} × ${item.reps} · ${ex.muscle} · ${ex.equipment}</div>
       </div>
     </div>
@@ -126,20 +136,34 @@ async function renderStep(idx) {
       <div class="coach-head">🎯 ${sug.headline}</div>
       <div class="coach-detail">${sug.detail}</div>
       ${sug.target ? `<div class="coach-target"><span class="ct-label">Progression</span> ${sug.target}</div>` : ''}
-      ${sug.lastStr ? `<div class="coach-last">Last time: ${sug.lastStr}</div>` : ''}
+      ${sug.lastStr ? `<div class="coach-last">Last time: ${sug.lastStr}${tryStr ? ` → <strong>try ${tryStr}</strong>` : ''}</div>` : ''}
     </div>
+
+    ${(showWeight && sug.readyToLevelUp) ? `
+    <button class="btn levelup" id="level-up">🔼 Level up · add ${sug.inc}kg → ${sug.suggestedWeight}kg</button>` : ''}
 
     ${showWeight ? `
     <div class="working">
       <label for="workw">Working weight</label>
       <div class="working-in">
         <button class="stp" id="w-down" aria-label="Lower weight">−</button>
-        <input id="workw" class="inp w-big" type="number" inputmode="decimal" placeholder="kg" value="${working}" />
+        <input id="workw" class="inp w-big" type="text" inputmode="decimal" pattern="[0-9.,]*" aria-describedby="w-hint" placeholder="kg" value="${working}" />
         <button class="stp" id="w-up" aria-label="Raise weight">+</button>
         <span class="working-unit">kg</span>
       </div>
-      <p class="working-hint">Start heavier or lighter? Set it here and every set below follows.</p>
+      <p class="working-hint" id="w-hint">Start heavier or lighter? Set it here and every set below follows. Comma or point both work (e.g. 22,5).</p>
+      <div class="jump-edit">
+        <label for="jump-sel">Weight jump</label>
+        <select id="jump-sel">${[2, 2.5, 5, 10].map(v => `<option value="${v}"${v === sug.inc ? ' selected' : ''}>+${v}kg</option>`).join('')}</select>
+      </div>
     </div>` : ''}
+
+    <div class="sets-adjust" role="group" aria-labelledby="sets-lbl">
+      <span class="sets-adjust-label" id="sets-lbl">Sets</span>
+      <button class="stp" id="sets-down" aria-label="Remove a set">−</button>
+      <span class="sets-count">${N}</span>
+      <button class="stp" id="sets-up" aria-label="Add a set">+</button>
+    </div>
 
     <div class="section-label">Your sets · aim for ${item.reps} ${repLabel}</div>
     <div class="set-rows">
@@ -150,13 +174,14 @@ async function renderStep(idx) {
         const rv = done ? (l.reps ?? '') : (target || '');
         return `
           <div class="set-row ${done ? 'done' : ''}" data-set="${i}">
-            <div class="set-no">${i + 1}</div>
-            ${showWeight ? `<input class="inp w" type="number" inputmode="decimal" placeholder="kg" value="${wv}" ${done ? 'disabled' : ''} />` : `<div class="inp-spacer">${ex.type === 'bodyweight' ? 'body' : '—'}</div>`}
-            <input class="inp r" type="number" inputmode="numeric" placeholder="${repLabel}" value="${rv}" ${done ? 'disabled' : ''} />
-            <button class="set-check" data-set="${i}" ${done ? 'disabled' : ''}>✓</button>
+            <div class="set-no" aria-hidden="true">${i + 1}</div>
+            ${showWeight ? `<input class="inp w" type="text" inputmode="decimal" pattern="[0-9.,]*" aria-label="Set ${i + 1} weight in kg" placeholder="kg" value="${wv}" ${done ? 'disabled' : ''} />` : `<div class="inp-spacer" aria-hidden="true">${ex.type === 'bodyweight' ? 'body' : '—'}</div>`}
+            <input class="inp r" type="number" inputmode="numeric" aria-label="Set ${i + 1} ${repLabel}" placeholder="${repLabel}" value="${rv}" ${done ? 'disabled' : ''} />
+            <button class="set-check" data-set="${i}" aria-label="Log set ${i + 1}" ${done ? 'disabled' : ''}>✓</button>
           </div>`;
       }).join('')}
     </div>
+    <p class="set-error" id="set-error" role="alert"></p>
 
     ${complete ? '' : `<button class="btn allset" id="all-set">✓ Log all ${N} sets as shown</button>`}
 
@@ -173,6 +198,7 @@ async function renderStep(idx) {
 
     <div class="ctrl-row">
       <button class="pill" id="swap-ex">⇄ Swap exercise</button>
+      ${total > 1 ? `<button class="pill" id="defer-ex">⤓ Do later</button>` : ''}
       ${idx < total - 1 ? `<button class="pill" id="skip-ex">Skip →</button>` : ''}
     </div>
 
@@ -197,11 +223,15 @@ async function renderStep(idx) {
     }, 800);
   }
 
-  wireStep(item, ex, N, target);
+  wireStep(item, ex, N, target, sug);
+
+  // restore focus after a destructive repaint so an AT user never lands on <body>
+  if (focusSel) { const el = S.root.querySelector(focusSel); if (el && el.focus) el.focus(); }
 }
 
-function wireStep(item, ex, N, target) {
+function wireStep(item, ex, N, target, sug) {
   const q = (s) => S.root.querySelector(s);
+  const inc = (sug && sug.inc) || 2.5;
 
   q('#exit').addEventListener('click', () => {
     clearTimers();
@@ -209,16 +239,44 @@ function wireStep(item, ex, N, target) {
   });
 
   S.root.querySelectorAll('.step-pill').forEach(p =>
-    p.addEventListener('click', () => renderStep(Number(p.dataset.jump))));
+    p.addEventListener('click', () => renderStep(Number(p.dataset.jump), '#ex-name')));
 
   // working-weight master field pushes to every unlogged set row
   const workw = q('#workw');
+  const push = () => S.root.querySelectorAll('.set-row:not(.done) .w').forEach(w => { w.value = workw.value; });
   if (workw) {
-    const push = () => S.root.querySelectorAll('.set-row:not(.done) .w').forEach(w => { w.value = workw.value; });
     workw.addEventListener('input', push);
-    q('#w-up').addEventListener('click', () => { workw.value = (Number(workw.value || 0) + 2.5); push(); });
-    q('#w-down').addEventListener('click', () => { workw.value = Math.max(0, Number(workw.value || 0) - 2.5); push(); });
+    q('#w-up').addEventListener('click', () => { workw.value = (num(workw.value) + inc); push(); });
+    q('#w-down').addEventListener('click', () => { workw.value = Math.max(0, num(workw.value) - inc); push(); });
   }
+
+  // "You earned it" — one tap applies the smart jump + resets reps to the bottom of the range
+  const lvl = q('#level-up');
+  if (lvl && workw) lvl.addEventListener('click', () => {
+    if (lvl.getAttribute('aria-disabled') === 'true') return;   // guard, button stays focusable
+    workw.value = sug.suggestedWeight;
+    push();
+    S.root.querySelectorAll('.set-row:not(.done) .r').forEach(r => { if (sug.lo) r.value = sug.lo; });
+    workw.focus();   // land on the field whose value changed, before locking the button
+    announce(`Leveled up. Working weight set to ${sug.suggestedWeight} kilos, all sets updated.`);
+    lvl.textContent = `🔼 Leveled up to ${sug.suggestedWeight}kg!`;
+    lvl.classList.add('leveled');
+    lvl.setAttribute('aria-disabled', 'true');
+  });
+
+  // editable jump size, remembered per exercise (repaint keeps sug in sync; refocus + announce)
+  const jsel = q('#jump-sel');
+  if (jsel) jsel.addEventListener('change', async () => {
+    const v = Number(jsel.value);
+    await setIncrement(item.id, v);
+    await renderStep(S.idx, '#jump-sel');
+    announce(`Weight jump set to ${v} kilograms.`);
+  });
+
+  // add / remove a set for this session
+  const sdn = q('#sets-down'), sup = q('#sets-up');
+  if (sdn) sdn.addEventListener('click', () => changeSets(-1));
+  if (sup) sup.addEventListener('click', () => changeSets(+1));
 
   S.root.querySelectorAll('.set-check').forEach(btn =>
     btn.addEventListener('click', () => checkSet(item, ex, Number(btn.dataset.set))));
@@ -239,44 +297,88 @@ function wireStep(item, ex, N, target) {
     }));
 
   q('#swap-ex').addEventListener('click', () => openInlineSwap());
+  const defer = q('#defer-ex');
+  if (defer) defer.addEventListener('click', deferCurrent);
   const skip = q('#skip-ex');
-  if (skip) skip.addEventListener('click', () => renderStep(S.idx + 1));
-  q('#next-ex').addEventListener('click', () => renderStep(S.idx + 1));
+  if (skip) skip.addEventListener('click', () => renderStep(S.idx + 1, '#ex-name'));
+  q('#next-ex').addEventListener('click', () => renderStep(S.idx + 1, '#ex-name'));
   q('#finish-now').addEventListener('click', finishFlow);
+}
+
+// add / remove a set for the current exercise, this session only (min = sets already
+// logged, so you can't delete a set you did; the editor sets your permanent default)
+function changeSets(delta) {
+  const it = S.day.items[S.idx];
+  const floor = Math.max(1, setsDone(it.id));
+  const next = Math.min(8, Math.max(floor, (it.sets || 1) + delta));
+  if (next === it.sets) return;
+  S.day.items[S.idx] = { ...it, sets: next };
+  renderStep(S.idx, delta < 0 ? '#sets-down' : '#sets-up').then(() => announce(`${next} sets`));
+}
+
+// "Do later" — machine's taken? Send this exercise to the end of the queue and
+// carry on. Log is keyed by exercise id, so reordering never loses your sets.
+function deferCurrent() {
+  if (S.day.items.length < 2) return;
+  const name = (LIBRARY[S.day.items[S.idx].id] || {}).name || 'this exercise';
+  const [it] = S.day.items.splice(S.idx, 1);
+  S.day.items.push(it);
+  const nextIdx = Math.min(S.idx, S.day.items.length - 1);
+  renderStep(nextIdx, '#ex-name').then(() => {
+    const nx = LIBRARY[S.day.items[nextIdx].id];
+    announce(`Moved ${name} to the end. Now on exercise ${nextIdx + 1} of ${S.day.items.length}${nx ? ', ' + nx.name : ''}.`);
+  });
 }
 
 /* ---------- logging ---------- */
 async function checkSet(item, ex, i) {
   const row = S.root.querySelector(`.set-row[data-set="${i}"]`);
+  const rInput = row.querySelector('.r');
+  const err = S.root.querySelector('#set-error');
   const w = valOf(row, '.w');
   const r = valOf(row, '.r');
-  if (!r) { row.classList.add('shake'); setTimeout(() => row.classList.remove('shake'), 400); return; }
-  await logSet(item.id, i, ex.type === 'weight' ? w : '', r);
+  if (!r) {
+    row.classList.add('shake'); setTimeout(() => row.classList.remove('shake'), 400);
+    if (rInput) { rInput.setAttribute('aria-invalid', 'true'); rInput.setAttribute('aria-describedby', 'set-error'); rInput.focus(); }
+    if (err) err.textContent = `Set ${i + 1}: enter your ${ex.type === 'timed' ? 'seconds' : 'reps'} before logging it.`;
+    return;
+  }
+  if (rInput) { rInput.removeAttribute('aria-invalid'); rInput.removeAttribute('aria-describedby'); }
+  if (err) err.textContent = '';
+  await logSet(item.id, i, ex.type === 'weight' ? (w === '' ? '' : num(w)) : '', r);
   S.active = await getActive();
   row.classList.add('done');
+  refreshFooter(item);
+  announce(`Set ${i + 1} logged.`);
+  startRest(item.rest);   // moves focus into the rest overlay before we disable this row
   row.querySelectorAll('input').forEach(el => { el.disabled = true; });
   const btn = row.querySelector('.set-check'); if (btn) btn.disabled = true;
-  refreshFooter(item);
-  startRest(item.rest);
 }
 
 async function logAllSets(item, ex, N, target) {
   const showWeight = ex.type === 'weight';
   const workw = S.root.querySelector('#workw');
+  const err = S.root.querySelector('#set-error');
   const w = showWeight ? (workw ? workw.value : '') : '';
   if (showWeight && !w) {
-    if (workw) { workw.classList.add('shake'); setTimeout(() => workw.classList.remove('shake'), 400); workw.focus(); }
+    if (workw) {
+      workw.classList.add('shake'); setTimeout(() => workw.classList.remove('shake'), 400);
+      workw.setAttribute('aria-invalid', 'true'); workw.setAttribute('aria-describedby', 'set-error'); workw.focus();
+    }
+    if (err) err.textContent = 'Set your working weight first, then log all sets.';
     return;
   }
+  if (workw) { workw.removeAttribute('aria-invalid'); }
+  if (err) err.textContent = '';
   const reps = target || 0;
   if (!reps) return;
   for (let i = 0; i < N; i++) {
     const already = (S.active.log[item.id] || [])[i];
     if (already && (already.reps || already.weight)) continue;
-    await logSet(item.id, i, showWeight ? w : '', reps);
+    await logSet(item.id, i, showWeight ? num(w) : '', reps);
   }
   S.active = await getActive();
-  renderStep(S.idx); // repaint: rows now done, Next goes primary
+  renderStep(S.idx, '#next-ex').then(() => announce(`All ${N} sets logged.`)); // rows now done, Next goes primary
 }
 
 function valOf(row, sel) { const el = row.querySelector(sel); return el ? el.value : ''; }
@@ -354,9 +456,9 @@ function startRest(seconds) {
     document.body.appendChild(overlay);
   }
   overlay.innerHTML = `
-    <div class="rest-card">
+    <div class="rest-card" role="dialog" aria-modal="true" aria-label="Rest timer">
       <div class="rest-label">REST</div>
-      <div class="rest-time">${remaining}s</div>
+      <div class="rest-time" role="timer" aria-live="off">${remaining}s</div>
       <div class="rest-btns">
         <button id="rest-add">+15s</button>
         <button id="rest-skip" class="prime">Skip</button>
@@ -365,6 +467,8 @@ function startRest(seconds) {
   overlay.querySelector('#rest-add').onclick = () => { remaining += 15; const t = overlay.querySelector('.rest-time'); if (t) t.textContent = `${remaining}s`; };
   overlay.querySelector('#rest-skip').onclick = endRest;
   overlay.classList.add('show');
+  overlay.querySelector('#rest-skip').focus();   // move focus into the overlay
+  document.addEventListener('keydown', onRestKey);
 
   restTimer = setInterval(() => {
     remaining -= 1;
@@ -373,12 +477,18 @@ function startRest(seconds) {
     if (t) t.textContent = `${remaining}s`;
   }, 1000);
 
+  function onRestKey(e) { if (e.key === 'Escape') endRest(); }
+
   function endRest() {
     clearInterval(restTimer); restTimer = null;
+    document.removeEventListener('keydown', onRestKey);
     if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
     beep();
     overlay.classList.remove('show');
     setTimeout(() => { if (overlay) overlay.remove(); }, 250);
+    // hand focus back to the next thing to do, never <body>
+    const t = S.root.querySelector('.set-row:not(.done) .r') || S.root.querySelector('#next-ex') || S.root.querySelector('#ex-name');
+    if (t && t.focus) t.focus();
   }
 }
 

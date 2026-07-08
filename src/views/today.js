@@ -15,6 +15,7 @@ import { openReview } from '../review.js';
 import { getReentry, applyOnramp, onrampNote } from '../reentry.js';
 import { treeUnlocked, TREE_UNLOCK_AT } from '../skills.js';
 import { openSkillTree } from '../skilltree.js';
+import { openThemePicker } from '../theme.js';
 import { reminderSettings, enable as enableNotify, disable as disableNotify, fireDueReminders, pushSupported, getPushSubscriptionJSON } from '../notify.js';
 import { getGamePlan, planText, openGamePlan } from '../gameplan.js';
 import { openWeeklyReview } from '../weekreview.js';
@@ -168,6 +169,11 @@ async function paintToday(root) {
         <span class="tile-title">Skill tree</span>
         <span class="tile-sub">${treeOpen ? 'Unlocked' : `${ctx.totalWorkouts}/${TREE_UNLOCK_AT} to unlock`}</span>
       </button></li>
+      <li><button class="tile" id="open-theme" aria-haspopup="dialog">
+        <span class="tile-ic" aria-hidden="true">🎨</span>
+        <span class="tile-title">Theme</span>
+        <span class="tile-sub">Change the look</span>
+      </button></li>
     </ul>`;
 
   let mid;
@@ -198,8 +204,8 @@ async function paintToday(root) {
         <h1 class="screen-title">Grow in the rest.</h1>
         <p class="lead">No lifting today. Muscle is built now, not in the gym. Eat big, sleep hard, show up tomorrow.</p>
         <div style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap;">
-          <span class="pill accent">Goal: ${GOAL.targetWeight}kg lean</span>
-          <span class="pill">${GOAL.dailyCalories} cal</span>
+          <span class="pill accent">Goal: ${GOAL.goalName}</span>
+          <span class="pill">~${GOAL.targetWeight}kg lean</span>
           <span class="pill">${GOAL.dailyProtein}g protein</span>
         </div>
       </div>
@@ -236,6 +242,8 @@ async function paintToday(root) {
   }
   root.querySelector('#edit').addEventListener('click', () => openEditor(root));
   root.querySelector('#calis').addEventListener('click', () => openSkillTree(root));
+  const themeBtn = root.querySelector('#open-theme');
+  if (themeBtn) themeBtn.addEventListener('click', () => openThemePicker(themeBtn)); // no repaint: focus returns to the tile on close
   const phaseBtn = root.querySelector('#phase-advance');
   if (phaseBtn) phaseBtn.addEventListener('click', async () => { await advancePhase(phase.suggest.to); paintToday(root); });
   // no repaint on close → focus returns cleanly to the tile (fixes the focus-to-body bug)

@@ -27,11 +27,21 @@ export const MEALS = [
       { item: 'Honey (for taste)', amount: '1 tbsp' },
       { item: 'Creatine', amount: '5g' },
     ],
-    cal: 940, protein: 52, fibre: 11 },
+    cal: 940, protein: 52, fibre: 11,
+    alts: [
+      { name: 'Overnight oats', note: 'Same ingredients in a tub in the fridge, no blender needed' },
+      { name: '2 scoops whey in 500ml milk + 2 toast with PB', note: 'Fastest, no blend' },
+      { name: '5 scrambled eggs + 2 toast + a banana', note: 'Whole-food version' },
+    ] },
   { id: 'eggs', slot: 'Mid-morning', emoji: '🥚', name: 'Boiled Eggs',
     desc: 'Batch-boil 6–9 at once, they keep 5 days. Grab and go.',
     recipe: [{ item: 'Boiled eggs', amount: '3' }],
-    cal: 210, protein: 18, fibre: 0 },
+    cal: 210, protein: 18, fibre: 0,
+    alts: [
+      { name: '1 scoop whey in milk', note: 'Actually more protein, ~30g' },
+      { name: 'Tub of cottage cheese or double-cream yoghurt', note: 'No prep, grab and go' },
+      { name: 'Cheese wedges + a few provitas', note: 'Stash it at work' },
+    ] },
   { id: 'lunch', slot: 'Lunch', emoji: '🥪', name: 'Tuna Sandwich',
     desc: 'Mon, Wed, Fri, Sat, Sun.',
     recipe: [
@@ -45,21 +55,36 @@ export const MEALS = [
         { item: 'Bread roll', amount: '1' },
         { item: 'Mayo', amount: '1 tbsp' },
       ], cal: 520, protein: 58 },
-    cal: 430, protein: 38, fibre: 6 },
+    cal: 430, protein: 38, fibre: 6,
+    alts: [
+      { name: 'Chicken roll', note: 'Deli grilled chicken + roll + mayo (your Tue/Thu option)' },
+      { name: 'Egg-mayo sandwich', note: '4 mashed boiled eggs + mayo + 2 bread' },
+      { name: 'Tin of pilchards or salmon on toast', note: 'Ring-pull, no cooking' },
+    ] },
   { id: 'snack', slot: 'Afternoon / pre-gym', emoji: '🧀', name: 'Provita + Cottage Cheese',
     desc: 'Stash it at work, no prep. Spread it on like a wedge.',
     recipe: [
       { item: 'Provita crackers', amount: '4' },
       { item: 'Cottage cheese', amount: '~100g' },
     ],
-    cal: 190, protein: 14, fibre: 3 },
+    cal: 190, protein: 14, fibre: 3,
+    alts: [
+      { name: 'Whey shake in milk', note: 'When the snack falls through' },
+      { name: 'Banana + PB + a couple of boiled eggs', note: 'Carbs + protein' },
+      { name: 'Greek / double-cream yoghurt + a handful of nuts', note: 'Protein + healthy fats' },
+    ] },
   { id: 'dinner', slot: 'Dinner', emoji: '🍽️', name: 'Home Dinner', dinner: true,
     desc: 'Whatever’s cooked at home.',
     recipe: [
       { item: 'Cooked dinner', amount: 'big portion' },
       { item: 'Extra carbs (rice/potato)', amount: 'an added scoop' },
     ],
-    cal: 750, protein: 42, fibre: 8 },
+    cal: 750, protein: 42, fibre: 8,
+    alts: [
+      { name: '2 tins tuna / pilchards on rice or toast + veg', note: 'Nights nobody cooks' },
+      { name: 'Shop rotisserie chicken + a roll or microwave rice', note: 'Zero prep' },
+      { name: 'Big scramble (5-6 eggs) + toast + cheese', note: 'Breakfast for dinner' },
+    ] },
 ];
 
 export const FIBRE_TARGET = 30; // g/day — general health guideline, his best food-quality proxy

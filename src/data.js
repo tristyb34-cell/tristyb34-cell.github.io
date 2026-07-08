@@ -4,7 +4,7 @@
    ============================================================ */
 
 // App version watermark — bump this AND the CACHE const in sw.js together on every ship.
-export const APP_VERSION = 'v0.35.0';
+export const APP_VERSION = 'v0.36.0';
 
 // Public VAPID key for web push (safe to embed; private key lives in GitHub Secrets).
 export const VAPID_PUBLIC_KEY = 'BEznbY05xi5mY6_hwZOAamNsu5ZP-p4Fs1l2cr3M9bXuYzfbVaJpwBZTxzMxUlgrQ_mNR2zz-TCUEwsp2JwWdJo';
@@ -30,9 +30,10 @@ export function commandmentOfTheDay() {
 }
 
 export const GOAL = {
+  goalName: 'John Morrison',
   startWeight: 65,
-  targetWeight: 73,        // Tom Holland lean
-  dreamWeight: 80,
+  targetWeight: 80,        // John Morrison look, scaled to 175cm (his ~78-83kg lean band)
+  dreamWeight: 82,
   dailyCalories: 2700,
   dailyProtein: 155,
 };

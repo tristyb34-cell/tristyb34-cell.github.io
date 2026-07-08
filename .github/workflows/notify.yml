@@ -11,6 +11,7 @@ on:
         default: false
   schedule:
     - cron: '30 6 * * *'    # 08:30 SA — weekday smoothie + creatine
+    - cron: '0 8 * * 2,4,5,6'  # 10:00 SA — learning nudge on training days (Tue/Thu/Fri/Sat)
     - cron: '30 8 * * *'    # 10:30 SA — weekend smoothie + creatine
     - cron: '0 10 * * *'    # 12:00 SA — weekend train
     - cron: '0 11 * * *'    # 13:00 SA — lunch

@@ -18,7 +18,7 @@ export const SKILLS = [
       { name: 'One-arm negatives', how: 'Lower slowly on one arm, 4–5s. The final boss of pressing.' },
     ] },
   { id: 'pull', name: 'Pull-Up Path', icon: '💪', tier: 1, group: 'Pull',
-    blurb: 'The big one for your back and the V-taper. Spider-Man’s real engine.',
+    blurb: 'The big one for your back and the V-taper. The John Morrison engine.',
     levels: [
       { name: 'Inverted rows × 10', how: 'Lie under a bar/table, pull your chest to it. Builds the pull pattern.' },
       { name: 'Negative pull-ups × 5', how: 'Jump to the top, lower as slowly as you can (5s). Builds the strength to go up.' },

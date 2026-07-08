@@ -3,11 +3,24 @@
 The whole app is themed from CSS custom properties at the top of `src/styles.css`.
 Change the tokens, re-skin everything. Never hardcode a colour in a component; use a token.
 
-## Direction: "Indigo Night"
+## Direction: "Indigo Night" (default, user-switchable since v0.36)
 Cool, premium dark. Deep indigo-black surfaces, a periwinkle→violet accent. Crafted,
 not flat: subtle shadows + a 1px top highlight give cards depth, and a light motion
 layer (staggered entrance, hero sheen, tile lift) makes it feel alive. The gradient
 (periwinkle→violet) is reserved for the hero and primary buttons only.
+
+## Themes (in-app switcher, v0.36+)
+Three skins, chosen live from Today → Explore → 🎨 Theme (`src/theme.js`, stored in db `theme`,
+applied as `data-theme` on `<html>` before first paint). Add a new theme = one `:root[data-theme="x"]`
+block in `styles.css` overriding the base tokens + the four rgb triples.
+- **Indigo Night** — the default (tokens above).
+- **Molten** — hot orange (`--accent #FF5A2C`) on charcoal (`--bg #0C0D11`).
+- **Light Green** — green (`--accent #2E7D46`, white ink) on soft white (`--bg #F3F8F4`). Lighter shadows.
+
+Every decorative glow/tint/chrome now resolves from four RGB-triple tokens
+(`--accent-rgb`, `--accent2-rgb`, `--bg-rgb`, `--surface2-rgb`) so a theme re-skins them all at once.
+Every theme carries a `--focus` token (ring colour ≥3:1 on all its surfaces). All pairs WCAG AA verified
+via the node checker before shipping (see `/tmp/contrast.js` pattern).
 
 ## Colour (all pairs WCAG AA verified)
 | Token | Hex | Use |

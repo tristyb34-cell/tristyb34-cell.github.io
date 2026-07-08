@@ -50,6 +50,15 @@ const WEEKEND = [
 ];
 const SUNDAY_REVIEW = { id: 'weekreview', t: '19:00', title: 'Your week in review 📅', body: 'Open DAX to see your last 7 days and next week’s job.' };
 
+// Learning nudge, tied to the muscle you're training that day (10:00 SA, training days only).
+const LEARN_TIME = '10:00';
+const LEARN = {
+  2: { title: 'Push day — learn the side delts 📚', body: 'Doing shoulders today. Want to know what actually builds that capped, wide look? Two minutes in DAX → Learn.' },
+  4: { title: 'Pull day — learn the V-taper 📚', body: 'Back day today. Learn how your lats build the taper. Open DAX → Learn.' },
+  5: { title: 'Leg day — why it matters 📚', body: 'Legs today. Two minutes on why they drag your whole physique up. Open DAX → Learn.' },
+  6: { title: 'Arms day — the triceps long head 📚', body: 'Arms today. The triceps is most of your arm size. Learn how to grow it in DAX → Learn.' },
+};
+
 // build today's list, gating train to his training days (Tue/Thu/Fri/Sat)
 let list;
 if (day === 0) { list = [...WEEKEND.filter(i => i.id !== 'train'), SUNDAY_REVIEW]; } // Sunday: rest + weekly review
@@ -68,5 +77,10 @@ const WINDOW = 20; // minutes — absorbs GitHub cron drift; crons are >=30min a
     if (mins >= itemMin && mins < itemMin + WINDOW) {
       await send({ title: item.title, body: item.body, tag: `${dayKey}-${item.id}`, url: '/' });
     }
+  }
+  // knowledge nudge on training days, deep-links to the Learn tab
+  const learn = LEARN[day];
+  if (learn && mins >= toMin(LEARN_TIME) && mins < toMin(LEARN_TIME) + WINDOW) {
+    await send({ title: learn.title, body: learn.body, tag: `${dayKey}-learn`, url: '/#learn' });
   }
 })();

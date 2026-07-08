@@ -204,6 +204,21 @@ function recipeList(recipe) {
     `<li><span class="ing">${r.item}</span><span class="amt">${r.amount}</span></li>`).join('')}</ul>`;
 }
 
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+// 3 easy swaps under each meal. Label is bound to the list (not a heading, so it
+// doesn't flood the screen-reader rotor with identical nodes).
+function swapList(alts, i) {
+  if (!alts || !alts.length) return '';
+  return `
+    <div class="meal-swaps">
+      <p class="swaps-lbl" id="swaps-lbl-${i}">3 easy swaps</p>
+      <ul class="swaps" aria-labelledby="swaps-lbl-${i}">
+        ${alts.map(a => `<li><span class="swap-name">${esc(a.name)}</span><span class="swap-note">${esc(a.note)}</span></li>`).join('')}
+      </ul>
+    </div>`;
+}
+
 function renderMenu(body) {
   let cal = 0, protein = 0;
   MEALS.forEach(m => { const mm = mealMacros(m, {}); cal += mm.cal; protein += mm.protein; });
@@ -216,7 +231,7 @@ function renderMenu(body) {
       </div>
       <p class="coach-last" style="margin-top:10px;">Same meals every day = no decisions, no willpower drain. Boring is what works.</p>
     </div>
-    ${MEALS.map(m => `
+    ${MEALS.map((m, i) => `
       <div class="card">
         <div class="meal-slot">${m.slot}</div>
         <div class="ex-name">${m.emoji} ${m.name}</div>
@@ -229,6 +244,7 @@ function renderMenu(body) {
             ${recipeList(m.alt.recipe)}
             <div class="meal-macros">${m.alt.cal} cal · ${m.alt.protein}g protein</div>
           </div>` : ''}
+        ${swapList(m.alts, i)}
       </div>`).join('')}
     <div class="card"><p class="lead"><strong>No blender yet?</strong> Make the smoothie as overnight oats: same ingredients in a tub in the fridge, no equipment.</p></div>
     <div class="card"><p class="lead"><strong>How treats work for you 🍟</strong> Your meals pay the rent: protein and quality calories. Snacks are spending money. Hit your meals and protein first and a packet of chips is just bonus surplus, not a setback. It only bites you if junk <em>replaces</em> a meal or kills your appetite for dinner. You’re bulking, not cutting, so relax and log it.</p></div>

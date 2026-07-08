@@ -115,7 +115,7 @@ export async function evaluateAdaptive(now = new Date()) {
     msg = `Your trend weight has stalled (${ratePerWeek.toFixed(2)}kg/wk). Hardgainer tax. I’ve bumped your target by 150 cal, eat it, even when you’re not hungry. 🥤`;
   } else if (ratePerWeek > 0.7 && adjust > -200) {
     adjust = Math.max(-200, adjust - 150);
-    msg = `You’re gaining fast (${ratePerWeek.toFixed(2)}kg/wk). To stay lean for the Spider-Man look, I’ve eased your target by 150 cal.`;
+    msg = `You’re gaining fast (${ratePerWeek.toFixed(2)}kg/wk). To stay lean for the John Morrison look, I’ve eased your target by 150 cal.`;
   }
 
   if (msg) {

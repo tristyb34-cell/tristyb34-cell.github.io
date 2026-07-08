@@ -74,7 +74,7 @@ export async function buildContext() {
 /* ---------- the greeting (top of Today) ---------- */
 export function greeting(ctx) {
   const goalLine = ctx.toGoal != null && ctx.toGoal > 0
-    ? `${ctx.toGoal}kg to your ${ctx.goalWeight}kg Spider-Man frame`
+    ? `${ctx.toGoal}kg to your ${ctx.goalWeight}kg John Morrison frame`
     : `your ${ctx.goalWeight}kg frame`;
 
   if (ctx.isTrainingDay && !ctx.trainedToday) {
@@ -143,7 +143,7 @@ const MILESTONES = [
   { id: 'w50', test: c => c.totalWorkouts >= 50, title: '50 workouts', body: 'Half a hundred. People are starting to notice, aren’t they? 😎' },
   { id: 'g1', test: c => c.gained != null && c.gained >= 1, title: '+1kg of you', body: 'A kilo up. On a hardgainer, that’s a win most never get.' },
   { id: 'g3', test: c => c.gained != null && c.gained >= 3, title: '+3kg', body: 'Three kilos of new you. The mirror’s changing. Keep eating.' },
-  { id: 'g5', test: c => c.gained != null && c.gained >= 5, title: '+5kg', body: 'Five kilos. You’re genuinely close to the Tom Holland frame now. 🕷️' },
+  { id: 'g5', test: c => c.gained != null && c.gained >= 5, title: '+5kg', body: 'Five kilos of you that wasn’t there before. The John Morrison frame is taking shape. 💪' },
   { id: 't10', test: c => c.volume >= 10000, title: '10 tonnes moved', body: 'You’ve lifted 10,000kg total. Brick by brick.' },
   { id: 't50', test: c => c.volume >= 50000, title: '50 tonnes moved', body: '50 tonnes. That’s a serious amount of work in the bank.' },
 ];

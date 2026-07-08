@@ -69,7 +69,7 @@ export async function getPhase(now = new Date()) {
   let suggest = null;
   if (rec.phase === 'build') {
     if (tw != null && tw >= goal) {
-      suggest = { to: 'overshoot', why: `You hit ${goal}kg, your Tom Holland checkpoint. 🎯 Build a little past it now, or hold here.` };
+      suggest = { to: 'overshoot', why: `You hit ${goal}kg, your John Morrison target. 🎯 Build a little past it now, or hold here.` };
     }
   } else if (rec.phase === 'overshoot') {
     const waistGain = (waist != null && rec.baseWaist != null) ? Math.round((waist - rec.baseWaist) * 10) / 10 : null;

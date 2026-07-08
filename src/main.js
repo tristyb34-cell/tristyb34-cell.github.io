@@ -53,6 +53,10 @@ async function init() {
   const vEl = document.getElementById('app-version');
   if (vEl) vEl.textContent = APP_VERSION;
 
+  // apply the saved theme before first paint so there's no flash of the default
+  const { bootTheme } = await import('./theme.js');
+  await bootTheme();
+
   const startTab = (location.hash || '').replace('#', '') || 'today';
   await go(startTab);
 
