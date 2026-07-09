@@ -21,6 +21,7 @@
   --accent-hover:#93A0FF;
   --accent-press:#5F6FE0;
   --focus:       #EEF0FA; /* focus-ring colour, ≥3:1 on every surface in this theme */
+  --cue-label:   var(--accent); /* coach-cue label; overridden per theme where accent-on-tint < 4.5:1 */
 
   /* raw RGB triples so every decorative glow/tint/chrome rgba() re-themes from
      one place. A theme redefines these four and all the alpha layers follow. */
@@ -72,6 +73,7 @@
   --accent-hover:#276B3C; --accent-press:#1F5A31; --focus:#123D22;
   --accent-rgb:46,125,70; --accent2-rgb:42,115,65; --bg-rgb:243,248,244; --surface2-rgb:231,241,233;
   --good:#0F8A6B; --warn:#9A5B00;
+  --cue-label:#1F5A31; /* darker green: accent-on-green-tint drops below 4.5:1 in this theme */
   --shadow-1:0 1px 2px rgba(0,0,0,.08); --shadow-2:0 10px 30px rgba(0,0,0,.12); --hair-top:inset 0 1px 0 rgba(255,255,255,.5);
 }
 
@@ -833,6 +835,18 @@ h1.screen-title { font-size: 31px; font-weight: 850; line-height: 1.04; letter-s
   padding: 10px 12px; font-size: 13.5px; color: var(--text-dim); margin-bottom: 14px;
 }
 .safe-note strong { color: var(--text); }
+
+/* coach cue — vivid form reminder, mirrors .coach-target (accent-tint callout) */
+.form-cue {
+  margin: 12px 0 6px; padding: 10px 12px; border-radius: var(--r-md);
+  background: rgba(var(--accent-rgb),.09); border: 1px solid rgba(var(--accent-rgb),.28);
+  border-left: 3px solid var(--accent);
+  color: var(--text); font-size: 14px; line-height: 1.5;
+}
+.form-cue-label {
+  color: var(--cue-label); font-weight: 800; text-transform: uppercase;
+  letter-spacing: .04em; font-size: 12px; margin-right: 4px;
+}
 
 .working { margin: 4px 0 6px; }
 .working label { display: block; font-size: 12px; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; }

@@ -4,6 +4,7 @@
    swap moves your gym can't do. openDayPreview() is reused by Today.
    ============================================================ */
 import { LIBRARY, estimateMinutes } from '../program.js';
+import { cueFor } from '../cues.js';
 import { getPlan } from '../plan.js';
 import { openEditor } from '../editor.js';
 import { getGym, isMissing, openSwapPicker, openGymSetup } from '../equipment.js';
@@ -122,6 +123,8 @@ async function openHowto(root, dow, idx, onBack) {
         <div class="ex-sub">${item.sets} × ${item.reps} · ${ex.muscle} · ${ex.equipment}</div>
       </div>
     </div>
+
+    ${cueFor(item.id) ? `<div class="form-cue"><span aria-hidden="true">🎯</span> <span class="form-cue-label">Coach cue</span> <span>${cueFor(item.id)}</span></div>` : ''}
 
     ${missing ? `<div class="nudge accent-nudge"><span class="nudge-ic">⚠️</span><span>Your gym may not have this (${ex.equipment}). Swap it for something you can do.</span></div>` : ''}
     <button class="btn ghost" id="swap">⇄ Swap this exercise</button>

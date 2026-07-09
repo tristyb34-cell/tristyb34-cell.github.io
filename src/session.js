@@ -13,6 +13,7 @@ import { isSpotter, safeSub } from './safety.js';
 import { swapCandidates, getGym, hasEquipment } from './equipment.js';
 import { getPlan, savePlan } from './plan.js';
 import { announce } from './a11y.js';
+import { cueFor } from './cues.js';
 
 const stretchList = (items) => `<div class="stretch-list">${items.map(s =>
   `<div class="stretch-item"><span class="stretch-dot">›</span><div><div class="nm">${s.name}</div><div class="dt">${s.detail}</div></div><span class="du">${s.dur}</span></div>`).join('')}</div>`;
@@ -138,6 +139,8 @@ async function renderStep(idx, focusSel) {
       ${sug.target ? `<div class="coach-target"><span class="ct-label">Progression</span> ${sug.target}</div>` : ''}
       ${sug.lastStr ? `<div class="coach-last">Last time: ${sug.lastStr}${tryStr ? ` → <strong>try ${tryStr}</strong>` : ''}</div>` : ''}
     </div>
+
+    ${cueFor(item.id) ? `<div class="form-cue"><span aria-hidden="true">🎯</span> <span class="form-cue-label">Coach cue</span> <span>${cueFor(item.id)}</span></div>` : ''}
 
     ${(showWeight && sug.readyToLevelUp) ? `
     <button class="btn levelup" id="level-up">🔼 Level up · add ${sug.inc}kg → ${sug.suggestedWeight}kg</button>` : ''}
