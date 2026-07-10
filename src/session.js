@@ -13,7 +13,7 @@ import { isSpotter, safeSub } from './safety.js';
 import { swapCandidates, getGym, hasEquipment } from './equipment.js';
 import { getPlan, savePlan } from './plan.js';
 import { announce } from './a11y.js';
-import { cueFor } from './cues.js';
+import { formBlock } from './cues.js';
 
 const stretchList = (items) => `<div class="stretch-list">${items.map(s =>
   `<div class="stretch-item"><span class="stretch-dot">›</span><div><div class="nm">${s.name}</div><div class="dt">${s.detail}</div></div><span class="du">${s.dur}</span></div>`).join('')}</div>`;
@@ -34,7 +34,11 @@ function clearTimers() {
 export async function renderSession(root, day) {
   clearTimers();
   const active = await startActive(day);
-  S = { root, day, idx: 0, active };
+  S = { root, day, idx: 0, active, guarded: new Set(), planned: {} };
+  // Snapshot the PLANNED set count per exercise before anything can bump it.
+  // The in-session "+ set" adjuster mutates item.sets, so comparing against the
+  // live value would silently raise the guard threshold and it'd never fire.
+  for (const it of day.items) S.planned[it.id] = it.sets;
   // first unfinished exercise = where the march resumes on refresh
   const firstOpen = day.items.findIndex((_, i) => !itemComplete(i));
   S.idx = firstOpen === -1 ? 0 : firstOpen;
@@ -124,9 +128,14 @@ async function renderStep(idx, focusSel) {
     </details>` : ''}
 
     <div class="ex-hero">
-      <img id="frame" class="ex-hero-img" src="${ex.frames[0]}" alt="${ex.name}" />
+      <div class="ex-frames" id="ex-frames">
+        <img id="frame" class="ex-hero-img frame-a" src="${ex.frames[0]}" alt="${ex.name}" />
+        ${ex.frames.length > 1
+          ? `<img class="ex-hero-img frame-b" src="${ex.frames[1]}" alt="" aria-hidden="true" />`
+          : ''}
+      </div>
       <div class="ex-hero-cap">
-        <div class="ex-name big" id="ex-name" tabindex="-1">${ex.name}</div>
+        <h1 class="ex-name big" id="ex-name" tabindex="-1">${ex.name}</h1>
         <div class="ex-sub">${N} × ${item.reps} · ${ex.muscle} · ${ex.equipment}</div>
       </div>
     </div>
@@ -140,7 +149,7 @@ async function renderStep(idx, focusSel) {
       ${sug.lastStr ? `<div class="coach-last">Last time: ${sug.lastStr}${tryStr ? ` → <strong>try ${tryStr}</strong>` : ''}</div>` : ''}
     </div>
 
-    ${cueFor(item.id) ? `<div class="form-cue"><span aria-hidden="true">🎯</span> <span class="form-cue-label">Coach cue</span> <span>${cueFor(item.id)}</span></div>` : ''}
+    ${formBlock(item.id)}
 
     ${(showWeight && sug.readyToLevelUp) ? `
     <button class="btn levelup" id="level-up">🔼 Level up · add ${sug.inc}kg → ${sug.suggestedWeight}kg</button>` : ''}
@@ -216,20 +225,29 @@ async function renderStep(idx, focusSel) {
     <button class="btn ghost small" id="finish-now">Finish &amp; save now</button>
   `;
 
-  // animate the two frames
-  if (ex.frames.length > 1) {
-    let f = 0;
+  // cross-fade the two frames. Single-frame exercises (a dead hang has no motion)
+  // and reduced-motion users get a still image, no timer.
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (ex.frames.length > 1 && !reduceMotion) {
     frameTimer = setInterval(() => {
-      f = 1 - f;
-      const img = document.getElementById('frame');
-      if (img) img.src = ex.frames[f];
-    }, 800);
+      const wrap = document.getElementById('ex-frames');
+      if (wrap) wrap.classList.toggle('tween');
+    }, 1400);
   }
 
   wireStep(item, ex, N, target, sug);
 
   // restore focus after a destructive repaint so an AT user never lands on <body>
-  if (focusSel) { const el = S.root.querySelector(focusSel); if (el && el.focus) el.focus(); }
+  if (focusSel) {
+    const el = S.root.querySelector(focusSel);
+    if (el && el.focus) {
+      // a new exercise starts at the top of the page, not wherever you were scrolled to.
+      // preventScroll matters: focusing the heading would otherwise drag it back to
+      // mid-viewport and undo the scroll.
+      if (focusSel === '#ex-name') window.scrollTo(0, 0);
+      el.focus({ preventScroll: true });
+    }
+  }
 }
 
 function wireStep(item, ex, N, target, sug) {
@@ -348,6 +366,18 @@ async function checkSet(item, ex, i) {
   }
   if (rInput) { rInput.removeAttribute('aria-invalid'); rInput.removeAttribute('aria-describedby'); }
   if (err) err.textContent = '';
+
+  // Past the planned sets? Push back once per exercise, then let him decide.
+  const planned = S.planned[item.id] ?? item.sets;
+  if (i >= planned && !S.guarded.has(item.id)) {
+    S.guarded.add(item.id);
+    showSetGuard(item, ex, i, planned, () => commitSet(item, ex, i, row, w, r));
+    return;
+  }
+  await commitSet(item, ex, i, row, w, r);
+}
+
+async function commitSet(item, ex, i, row, w, r) {
   await logSet(item.id, i, ex.type === 'weight' ? (w === '' ? '' : num(w)) : '', r);
   S.active = await getActive();
   row.classList.add('done');
@@ -356,6 +386,56 @@ async function checkSet(item, ex, i) {
   startRest(item.rest);   // moves focus into the rest overlay before we disable this row
   row.querySelectorAll('input').forEach(el => { el.disabled = true; });
   const btn = row.querySelector('.set-check'); if (btn) btn.disabled = true;
+}
+
+/* Sensation is not stimulus. He once did 7 sets of 4 because his lat "felt like
+   nothing" — the lat just has poor proprioception. This catches that in the moment.
+   role=alertdialog (it demands a choice), inert traps focus like every other
+   overlay in this app, Escape cancels. Fires once per exercise per session. */
+function showSetGuard(item, ex, setIdx, planned, onProceed) {
+  const returnFocus = document.activeElement;
+  const bg = ['.app-header', '#view', '#tabbar'].map(s => document.querySelector(s)).filter(Boolean);
+  const overlay = document.createElement('div');
+  overlay.id = 'set-guard';
+  overlay.className = 'guard-overlay';
+  overlay.setAttribute('role', 'alertdialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-labelledby', 'sg-title');
+  overlay.setAttribute('aria-describedby', 'sg-body');
+  overlay.innerHTML = `
+    <div class="guard-card">
+      <div class="guard-glyph" aria-hidden="true">🧯</div>
+      <h2 id="sg-title" class="guard-title" tabindex="-1">That's set ${setIdx + 1} of ${planned}</h2>
+      <div id="sg-body">
+        <p>Sensation is not stimulus. Feeling nothing is normal, not a warning.</p>
+        <p>If the weight or the reps go up next week, it worked. That is the only scoreboard.</p>
+      </div>
+      <div class="guard-btns">
+        <!-- stopping is the RECOMMENDED action, so it gets the filled button.
+             "Log it anyway" must never be the thing that breathes at him. -->
+        <button class="btn" id="sg-stop">Nah, I'm done</button>
+        <button class="btn ghost" id="sg-go">Log it anyway</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  bg.forEach(el => { el.inert = true; });
+  document.body.style.overflow = 'hidden';
+  requestAnimationFrame(() => overlay.classList.add('show'));
+
+  const close = (restore) => {
+    overlay.classList.remove('show');
+    document.removeEventListener('keydown', onKey);
+    bg.forEach(el => { el.inert = false; });
+    document.body.style.overflow = '';
+    setTimeout(() => overlay.remove(), 220);
+    if (restore && returnFocus && returnFocus.isConnected) returnFocus.focus();
+  };
+  const onKey = (e) => { if (e.key === 'Escape') { e.preventDefault(); close(true); } };
+  document.addEventListener('keydown', onKey);
+  overlay.querySelector('#sg-stop').addEventListener('click', () => close(true));
+  // don't restore focus on proceed: the commit disables that button and startRest takes focus
+  overlay.querySelector('#sg-go').addEventListener('click', () => { close(false); onProceed(); });
+  overlay.querySelector('#sg-title').focus();
 }
 
 async function logAllSets(item, ex, N, target) {
@@ -459,7 +539,7 @@ function startRest(seconds) {
     document.body.appendChild(overlay);
   }
   overlay.innerHTML = `
-    <div class="rest-card" role="dialog" aria-modal="true" aria-label="Rest timer">
+    <div class="rest-card" role="dialog" aria-modal="true" aria-label="Rest timer, ${remaining} seconds">
       <div class="rest-label">REST</div>
       <div class="rest-time" role="timer" aria-live="off">${remaining}s</div>
       <div class="rest-btns">
@@ -470,6 +550,11 @@ function startRest(seconds) {
   overlay.querySelector('#rest-add').onclick = () => { remaining += 15; const t = overlay.querySelector('.rest-time'); if (t) t.textContent = `${remaining}s`; };
   overlay.querySelector('#rest-skip').onclick = endRest;
   overlay.classList.add('show');
+  // aria-modal="true" was a lie: nothing stopped Tab escaping into the set rows behind.
+  // inert the shell (never #sr-status) — the same contract every other overlay here uses.
+  const restBg = ['.app-header', '#view', '#tabbar'].map(s => document.querySelector(s)).filter(Boolean);
+  restBg.forEach(el => { el.inert = true; });
+  document.body.style.overflow = 'hidden';
   overlay.querySelector('#rest-skip').focus();   // move focus into the overlay
   document.addEventListener('keydown', onRestKey);
 
@@ -485,6 +570,8 @@ function startRest(seconds) {
   function endRest() {
     clearInterval(restTimer); restTimer = null;
     document.removeEventListener('keydown', onRestKey);
+    restBg.forEach(el => { el.inert = false; });
+    document.body.style.overflow = '';
     if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
     beep();
     overlay.classList.remove('show');

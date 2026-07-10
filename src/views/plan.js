@@ -4,7 +4,7 @@
    swap moves your gym can't do. openDayPreview() is reused by Today.
    ============================================================ */
 import { LIBRARY, estimateMinutes } from '../program.js';
-import { cueFor } from '../cues.js';
+import { formBlock } from '../cues.js';
 import { getPlan } from '../plan.js';
 import { openEditor } from '../editor.js';
 import { getGym, isMissing, openSwapPicker, openGymSetup } from '../equipment.js';
@@ -117,20 +117,25 @@ async function openHowto(root, dow, idx, onBack) {
     <button class="back-btn" id="back">‹ Back</button>
 
     <div class="ex-hero">
-      <img id="frame" class="ex-hero-img" src="${ex.frames[0]}" alt="${ex.name}" />
+      <div class="ex-frames" id="ex-frames">
+        <img id="frame" class="ex-hero-img frame-a" src="${ex.frames[0]}" alt="${ex.name}" />
+        ${ex.frames.length > 1
+          ? `<img class="ex-hero-img frame-b" src="${ex.frames[1]}" alt="" aria-hidden="true" />`
+          : ''}
+      </div>
       <div class="ex-hero-cap">
-        <div class="ex-name big">${ex.name}</div>
+        <h1 class="ex-name big" id="ex-name" tabindex="-1">${ex.name}</h1>
         <div class="ex-sub">${item.sets} × ${item.reps} · ${ex.muscle} · ${ex.equipment}</div>
       </div>
     </div>
 
-    ${cueFor(item.id) ? `<div class="form-cue"><span aria-hidden="true">🎯</span> <span class="form-cue-label">Coach cue</span> <span>${cueFor(item.id)}</span></div>` : ''}
+    ${formBlock(item.id)}
 
     ${missing ? `<div class="nudge accent-nudge"><span class="nudge-ic">⚠️</span><span>Your gym may not have this (${ex.equipment}). Swap it for something you can do.</span></div>` : ''}
     <button class="btn ghost" id="swap">⇄ Swap this exercise</button>
 
-    <details class="howto" open>
-      <summary>How to do it</summary>
+    <details class="howto">
+      <summary>Step-by-step</summary>
       <ol>${ex.cues.map(c => `<li>${c}</li>`).join('')}</ol>
       <div class="home-swap"><strong>No gym / home swap:</strong> ${ex.home}</div>
     </details>
@@ -138,14 +143,17 @@ async function openHowto(root, dow, idx, onBack) {
     <div style="height:8px;"></div>
     <button class="btn ghost" id="to-list">Back</button>`;
 
-  if (ex.frames.length > 1) {
-    let f = 0;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (ex.frames.length > 1 && !reduceMotion) {
     frameTimer = setInterval(() => {
-      f = 1 - f;
-      const img = document.getElementById('frame');
-      if (img) img.src = ex.frames[f];
-    }, 800);
+      const wrap = document.getElementById('ex-frames');
+      if (wrap) wrap.classList.toggle('tween');
+    }, 1400);
   }
+
+  // the view swapped under the user: land focus on the new heading, not <body>
+  const h = root.querySelector('#ex-name');
+  if (h) h.focus({ preventScroll: true });
 
   root.querySelector('#back').addEventListener('click', onBack);
   root.querySelector('#to-list').addEventListener('click', onBack);

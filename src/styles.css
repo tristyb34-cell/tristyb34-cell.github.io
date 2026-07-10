@@ -22,6 +22,9 @@
   --accent-press:#5F6FE0;
   --focus:       #EEF0FA; /* focus-ring colour, ≥3:1 on every surface in this theme */
   --cue-label:   var(--accent); /* coach-cue label; overridden per theme where accent-on-tint < 4.5:1 */
+  --cue-warn:    #FFC24B; /* "doing it wrong if" label — 9.86:1 on --surface-2 */
+  --cue-cool:    #5AD1E6; /* "range & tempo" label — cyan, NOT periwinkle, so it never
+                             reads as the accent in this theme. 8.82:1 on --surface-2 */
 
   /* raw RGB triples so every decorative glow/tint/chrome rgba() re-themes from
      one place. A theme redefines these four and all the alpha layers follow. */
@@ -74,6 +77,8 @@
   --accent-rgb:46,125,70; --accent2-rgb:42,115,65; --bg-rgb:243,248,244; --surface2-rgb:231,241,233;
   --good:#0F8A6B; --warn:#9A5B00;
   --cue-label:#1F5A31; /* darker green: accent-on-green-tint drops below 4.5:1 in this theme */
+  --cue-warn:#8A5200;  /* 5.52:1 on --surface-2 (the lighter #9A5B00 fails at 4.12 on a tint) */
+  --cue-cool:#0C6076;  /* 6.15:1 on --surface-2 */
   --shadow-1:0 1px 2px rgba(0,0,0,.08); --shadow-2:0 10px 30px rgba(0,0,0,.12); --hair-top:inset 0 1px 0 rgba(255,255,255,.5);
 }
 
@@ -269,6 +274,16 @@ h1.screen-title { font-size: 31px; font-weight: 850; line-height: 1.04; letter-s
 .back-btn { background: none; border: none; color: var(--text-dim); font-size: 15px; font-weight: 700; padding: 0 0 14px; }
 .ex-hero { border-radius: var(--r-lg); overflow: hidden; background: var(--surface); border: 1px solid var(--line); margin-bottom: 14px; }
 .ex-hero-img { width: 100%; aspect-ratio: 5 / 4; object-fit: cover; background: #fff; display: block; }
+
+/* Two static frames cross-faded so the movement reads as motion instead of a
+   hard flip. It shows the start and the end of the rep, not the path between
+   them — real animation needs licensed assets we don't have. */
+.ex-frames { position: relative; }
+.ex-frames .frame-b { position: absolute; inset: 0; height: 100%; opacity: 0; transition: opacity .9s var(--ease); }
+.ex-frames.tween .frame-b { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .ex-frames .frame-b { transition: none; opacity: 0; }  /* JS also skips the timer */
+}
 .ex-hero-cap { padding: 14px 16px; }
 
 .coach { background: var(--surface-2); border-radius: var(--r-md); padding: 14px 16px; border-left: 3px solid var(--accent); }
@@ -837,16 +852,58 @@ h1.screen-title { font-size: 31px; font-weight: 850; line-height: 1.04; letter-s
 .safe-note strong { color: var(--text); }
 
 /* coach cue — vivid form reminder, mirrors .coach-target (accent-tint callout) */
-.form-cue {
-  margin: 12px 0 6px; padding: 10px 12px; border-radius: var(--r-md);
-  background: rgba(var(--accent-rgb),.09); border: 1px solid rgba(var(--accent-rgb),.28);
-  border-left: 3px solid var(--accent);
-  color: var(--text); font-size: 14px; line-height: 1.5;
+/* Form block — four coaching rows on every exercise. The panel is NEUTRAL
+   (--surface-2); colour lives only in the left border and the label. Body text
+   is always --text. That's deliberate: a label tinted onto a panel of its own
+   hue is what broke light-theme contrast in v0.37. Never reintroduce per-row tints.
+   Rows are told apart by border + icon + label text, so colour is never the
+   sole carrier of meaning (WCAG 1.4.1). */
+.form-block {
+  margin: 12px 0 6px; padding: 4px 14px; background: var(--surface-2);
+  border: 1px solid var(--line); border-radius: var(--r-md);
 }
-.form-cue-label {
-  color: var(--cue-label); font-weight: 800; text-transform: uppercase;
-  letter-spacing: .04em; font-size: 12px; margin-right: 4px;
+.fb-row {
+  display: flex; flex-direction: column; gap: 4px; padding: 11px 0 11px 12px;
+  border-left: 3px solid var(--line); border-bottom: 1px solid var(--line);
 }
+.fb-row:last-child { border-bottom: none; }
+.fb-row dt { display: flex; align-items: center; gap: 7px; }
+.fb-ic { font-size: 15px; line-height: 1; }
+/* sentence-case in the DOM, uppercased here, so screen readers don't spell it out */
+.fb-label { font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.fb-row dd { margin: 0; font-size: 14.5px; line-height: 1.5; color: var(--text); }
+.fb-cue   { border-left-color: var(--cue-label); }  .fb-cue   .fb-label { color: var(--cue-label); }
+.fb-feel  { border-left-color: var(--text-faint); } .fb-feel  .fb-label { color: var(--text-dim); }
+.fb-wrong { border-left-color: var(--cue-warn); }   .fb-wrong .fb-label { color: var(--cue-warn); }
+.fb-range { border-left-color: var(--cue-cool); }   .fb-range .fb-label { color: var(--cue-cool); }
+/* The one row that prevents injury and wasted sets should win the glance on WEIGHT,
+   not only on warm-vs-cool hue — in the light theme the amber is dark and pops less.
+   Border width and type size touch no contrast pair, so the three-theme locks hold. */
+.fb-wrong { border-left-width: 4px; }
+.fb-wrong .fb-label { font-size: 12.5px; }
+
+/* Set-count guard — fires once per exercise when logging past the planned sets.
+   z-index sits above the runner (30) and below the full-screen sheets (120).
+   It never coexists with the rest timer: the guard resolves, then the set commits. */
+.guard-overlay {
+  position: fixed; inset: 0; z-index: 115; display: flex; align-items: center;
+  justify-content: center; padding: 24px; background: rgba(8,9,12,.86);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  opacity: 0; pointer-events: none; transition: opacity .2s var(--ease);
+}
+.guard-overlay.show { opacity: 1; pointer-events: auto; }
+.guard-card {
+  max-width: 340px; width: 100%; text-align: center; background: var(--surface-2);
+  border: 1px solid var(--line); border-radius: var(--r-lg); padding: 26px 22px; box-shadow: var(--shadow-2);
+}
+.guard-glyph { font-size: 44px; margin-bottom: 8px; }
+.guard-title { font-size: 21px; font-weight: 850; margin-bottom: 10px; color: var(--text); }
+.guard-title:focus-visible { outline: none; }  /* focused to read the message, not a control */
+#sg-body p { font-size: 14px; line-height: 1.5; color: var(--text-dim); margin: 0 0 8px; }
+#sg-body p:first-child { color: var(--text); font-size: 15px; font-weight: 600; }  /* one step of hierarchy, so the thesis lands */
+.guard-btns { display: flex; gap: 10px; margin-top: 16px; }
+.guard-btns .btn { margin: 0; flex: 1; }
+@media (prefers-reduced-motion: reduce) { .guard-overlay { transition: none; } }
 
 .working { margin: 4px 0 6px; }
 .working label { display: block; font-size: 12px; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; }

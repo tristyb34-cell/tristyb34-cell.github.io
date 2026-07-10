@@ -38,6 +38,29 @@ via the node checker before shipping (see `/tmp/contrast.js` pattern).
 | `--accent-hover` / `--accent-press` | `#93A0FF` / `#5F6FE0` | interaction states |
 | `--accent-tint` | `rgba(124,140,255,.10)` | subtle accent-washed backgrounds |
 | `--good` / `--warn` | `#35D6A0` / `#FFC24B` | semantics |
+| `--cue-label` | `var(--accent)` | form-block "Cue" label (per-theme override where needed) |
+| `--cue-warn` | `#FFC24B` | form-block "Doing it wrong if" label (9.86:1 on `--surface-2`) |
+| `--cue-cool` | `#5AD1E6` | form-block "Range & tempo" label. **Cyan, not blue** — a blue label reads as the accent in Indigo Night |
+
+## The form block (v0.38+)
+Four coaching rows on every exercise (`formBlock()` in `src/cues.js`, shared by the runner
+and the how-to so they can never drift): Cue / Feel it / Doing it wrong if / Range & tempo.
+
+Hard rules, learned the painful way:
+- The panel is **neutral `--surface-2`**. Colour lives only in the 3px left border and the
+  label text. Body text is always `--text`. **Never tint a row's panel with its own hue** —
+  that is exactly what dropped the green cue label below 4.5:1 in the light theme in v0.37.
+- Rows are distinguished by border **+ icon + text label**, never by colour alone (WCAG 1.4.1).
+- Labels are sentence-case in the DOM and uppercased in CSS. Literal `CUE` in markup risks
+  being spelled out letter-by-letter by TTS.
+- New label colours must clear 4.5:1 on `--surface-2` in **all three** themes before shipping.
+  In light, `#9A5B00` and `#0E6E86` are traps: they pass on the panel and fail on a tint.
+
+## Exercise frames
+Two static public-domain images, cross-faded (`.ex-frames` / `.frame-b`, 1.4s interval,
+.9s fade). It shows the start and end of the rep, not the path between them. Real animation
+would need licensed assets (every "free" exercise GIF set on GitHub is uncleared GymVisual
+media). Single-frame exercises and `prefers-reduced-motion` get a still image and no timer.
 
 ## Motion (premium feel, v0.35+)
 - Staggered rise: each screen's top-level cards cascade in on load (`.view > *`, ~50ms steps).
@@ -64,6 +87,11 @@ tabular-nums` wherever numbers change (weights, reps, stats).
   rings (`:focus-visible`, 2px `--text` outline). Modals: `role="dialog"`, `inert` the
   background (not `#sr-status`), focus the title, Esc + focus-return. Live updates go
   through `announce()` (src/a11y.js).
+- A dialog that demands a **choice** uses `role="alertdialog"` and moves focus (the set-count
+  guard). A passive notice that needs no response goes to `#sr-status` instead. Never both:
+  focusing a dialog already reads its title and body, so an `announce()` double-speaks.
+- Changing exercise = `window.scrollTo(0,0)` then `.focus({preventScroll:true})` on the `<h1>`.
+  Without `preventScroll` the focus call drags the heading back to mid-viewport.
 
 ## Versioning
 Bump `APP_VERSION` (src/data.js) and `CACHE` (sw.js) together on every ship; the header

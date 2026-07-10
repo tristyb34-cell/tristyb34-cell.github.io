@@ -10,13 +10,15 @@ on:
         type: boolean
         default: false
   schedule:
+    - cron: '0 5 * * 6'     # 07:00 SA — Saturday shake (gym is mornings only)
+    - cron: '0 6 * * 6'     # 08:00 SA — Saturday train
     - cron: '30 6 * * *'    # 08:30 SA — weekday smoothie + creatine
-    - cron: '0 8 * * 2,4,5,6'  # 10:00 SA — learning nudge on training days (Tue/Thu/Fri/Sat)
-    - cron: '30 8 * * *'    # 10:30 SA — weekend smoothie + creatine
-    - cron: '0 10 * * *'    # 12:00 SA — weekend train
+    - cron: '0 8 * * *'     # 10:00 SA — learning nudge, EVERY day
+    - cron: '30 8 * * *'    # 10:30 SA — Sunday smoothie + creatine
+    - cron: '0 10 * * *'    # 12:00 SA — rest-day check-in (Mon/Wed/Sun)
     - cron: '0 11 * * *'    # 13:00 SA — lunch
     - cron: '30 13 * * *'   # 15:30 SA — weekend snack
-    - cron: '0 15 * * *'    # 17:00 SA — weekday pre-gym snack
+    - cron: '0 15 * * *'    # 17:00 SA — weekday afternoon snack
     - cron: '0 16 * * *'    # 18:00 SA — weekday train
     - cron: '0 17 * * *'    # 19:00 SA — weekend dinner + Sunday weekly review
     - cron: '30 17 * * *'   # 19:30 SA — weekday dinner
