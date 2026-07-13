@@ -51,6 +51,7 @@ export function heatmap(activeSet, { weeks = 12 } = {}) {
     const key = d.toISOString().slice(0, 10);
     cells.push({ key, on: activeSet.has(key) });
   }
-  return `<div class="heat">${cells.map(c =>
-    `<span class="heat-cell ${c.on ? 'on' : ''}" title="${c.key}"></span>`).join('')}</div>`;
+  const on = cells.filter(c => c.on).length;
+  return `<div class="heat" role="img" aria-label="Activity, last ${weeks} weeks: ${on} of ${total} days trained">${cells.map(c =>
+    `<span class="heat-cell ${c.on ? 'on' : ''}" data-key="${c.key}" title="${c.key}"></span>`).join('')}</div>`;
 }

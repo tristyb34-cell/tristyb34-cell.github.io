@@ -11,11 +11,46 @@ const todayKey = (d = new Date()) => d.toISOString().slice(0, 10);
 export async function getSessions() {
   return (await db.get('sessions', [])) || [];
 }
-async function pushSession(session) {
+
+// One session per date. Upsert (not push) so auto-save, finish, and boot-rescue
+// can all touch the same day without ever creating a duplicate.
+async function upsertSession(session) {
   const all = await getSessions();
-  all.push(session);
+  const i = all.findIndex(s => s.date === session.date);
+  if (i >= 0) {
+    const prev = all[i];
+    // never downgrade: keep a finish stamp, and don't let a barer record clobber a richer one
+    session.finishedAt = session.finishedAt || prev.finishedAt;
+    if (prev.backfilled && !session.entries.length) return prev;
+    if (prev.entries.length > session.entries.length && !session.finishedAt) return prev;
+    all[i] = session;
+  } else {
+    all.push(session);
+  }
+  all.sort((x, y) => (x.date < y.date ? -1 : x.date > y.date ? 1 : 0));
   await db.set('sessions', all);
   return session;
+}
+
+// Build a session record from the in-progress workout (shared by every save path).
+function sessionFromActive(a, finished) {
+  const entries = Object.entries(a.log).map(([exId, sets]) => ({
+    exId,
+    sets: (sets || []).filter(s => s && (s.reps || s.weight)),
+  })).filter(e => e.sets.length);
+  const s = { date: a.date, dow: a.dow, title: a.title, startedAt: a.startedAt, entries };
+  if (a.planned != null) s.planned = a.planned;
+  if (finished) s.finishedAt = Date.now();
+  return s;
+}
+
+// "Showed up" = logged real work for at least half the planned exercises.
+const MEANINGFUL_MIN = 2;
+function isMeaningful(session) {
+  const need = session.planned
+    ? Math.max(MEANINGFUL_MIN, Math.ceil(session.planned / 2))
+    : MEANINGFUL_MIN;
+  return session.entries.length >= need;
 }
 
 /* ---------- the in-progress workout (survives refresh) ---------- */
@@ -25,7 +60,11 @@ export async function getActive() {
 export async function startActive(workout) {
   const existing = await getActive();
   if (existing && existing.date === todayKey() && existing.dow === workout.dow) return existing;
-  const active = { date: todayKey(), dow: workout.dow, title: workout.title, startedAt: Date.now(), log: {} };
+  if (existing) await syncActiveToSessions(); // a new day must never overwrite an unsaved prior one
+  const active = {
+    date: todayKey(), dow: workout.dow, title: workout.title,
+    startedAt: Date.now(), planned: (workout.items || []).length, log: {},
+  };
   await db.set('active', active);
   return active;
 }
@@ -39,7 +78,43 @@ export async function logSet(exId, setIndex, weight, reps, rir = null) {
     rir: (rir === null || rir === '') ? null : Number(rir),
   };
   await db.set('active', a);
+  await syncActiveToSessions(); // the fix: a real day saves itself, no Finish button required
   return a;
+}
+
+// Auto-save: once the day is meaningful it lives in sessions[] and can't be lost.
+async function syncActiveToSessions() {
+  const a = await getActive();
+  if (!a) return null;
+  const session = sessionFromActive(a, false);
+  if (!isMeaningful(session)) return null;
+  return upsertSession(session);
+}
+
+// Boot rescue: promote a meaningful workout that was left unfinished (e.g. one
+// stranded by the old overwrite bug) so it counts even if Finish was never tapped.
+export async function reconcileActive() {
+  const a = await getActive();
+  if (!a) return null;
+  const session = sessionFromActive(a, false);
+  const dates = new Set((await getSessions()).map(s => s.date));
+  const promoted = isMeaningful(session) && !dates.has(a.date) ? await upsertSession(session) : null;
+  // a leftover slot from a PAST day is done with; clear it so Today doesn't offer
+  // to "continue" a stale workout. Never touch today's slot (he may be mid-set).
+  if (a.date !== todayKey()) await db.del('active');
+  return promoted;
+}
+
+// Backfill: mark a past scheduled day as attended (no set data survived).
+export async function backfillSession(date, dow, title) {
+  return upsertSession({ date, dow, title: title || 'Trained', entries: [], backfilled: true });
+}
+export async function removeBackfill(date) {
+  const all = await getSessions();
+  const s = all.find(x => x.date === date);
+  if (!s || !s.backfilled) return false; // only ever remove an attendance mark, never real data
+  await db.set('sessions', all.filter(x => x.date !== date));
+  return true;
 }
 
 /* Estimated 1-rep-max (Epley), honest about reps left in the tank.
@@ -66,16 +141,10 @@ export async function setEffort(exId, rir) {
 export async function finishActive() {
   const a = await getActive();
   if (!a) return null;
-  const entries = Object.entries(a.log).map(([exId, sets]) => ({
-    exId,
-    sets: (sets || []).filter(s => s && (s.reps || s.weight)),
-  })).filter(e => e.sets.length);
-  const session = {
-    date: a.date, dow: a.dow, title: a.title,
-    startedAt: a.startedAt, finishedAt: Date.now(), entries,
-  };
-  await pushSession(session);
+  const session = sessionFromActive(a, true);
   await db.del('active');
+  if (!session.entries.length) return null; // nothing logged → don't save an empty session
+  await upsertSession(session);
   return session;
 }
 export async function discardActive() { await db.del('active'); }

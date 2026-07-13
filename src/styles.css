@@ -882,6 +882,20 @@ h1.screen-title { font-size: 31px; font-weight: 850; line-height: 1.04; letter-s
 .fb-wrong { border-left-width: 4px; }
 .fb-wrong .fb-label { font-size: 12.5px; }
 
+/* Backfill card — mark a missed scheduled day as attended. Reversible toggle;
+   trained vs not is carried by text + ✓ + aria-pressed, never colour alone. */
+.backfill-intro { font-size: 13.5px; line-height: 1.5; color: var(--text-dim); margin-bottom: 12px; }
+.backfill-list { list-style: none; margin: 0; padding: 0; }
+.backfill-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0; }
+.backfill-date { font-weight: 700; color: var(--text); font-size: 14.5px; }
+.backfill-btn {
+  min-height: 44px; padding: 9px 15px; border-radius: 999px;
+  background: var(--surface-2); color: var(--text); border: 1px solid var(--line);
+  font-weight: 700; font-size: 14px; white-space: nowrap;
+}
+.backfill-btn.confirmed { background: var(--grad); color: var(--accent-ink); border: none; }
+.backfill-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
 /* Set-count guard — fires once per exercise when logging past the planned sets.
    z-index sits above the runner (30) and below the full-screen sheets (120).
    It never coexists with the rest timer: the guard resolves, then the set commits. */

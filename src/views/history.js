@@ -1,6 +1,8 @@
-import { getSessions, bestE1rm } from '../workouts.js';
+import { getSessions, bestE1rm, backfillSession, removeBackfill } from '../workouts.js';
 import { LIBRARY, GROUPS } from '../program.js';
 import { sparkline, lineChart, heatmap } from '../charts.js';
+import { missedTrainingDays, computeConsistency } from '../consistency.js';
+import { announce } from '../a11y.js';
 
 // V-taper width drivers — the muscles his Spider-Man goal lives or dies on
 const VTAPER = new Set(['Shoulders', 'Back']);
@@ -44,10 +46,32 @@ function volumeCard(sessions) {
       </div>`;
   }).join('');
   return `
-    <div class="section-label">This week’s volume · working sets per muscle</div>
+    <h2 class="section-label">This week’s volume · working sets per muscle</h2>
     <div class="card vol-card">
       ${rows}
       <p class="coach-last">Aim ~10–20 sets per muscle a week. ★ = your V-taper drivers (shoulders &amp; back); don’t let them fall behind legs.</p>
+    </div>`;
+}
+
+const fmtLong = (iso) => new Date(iso + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+
+// The "did you train on these days?" backfill card. Renders nothing when there's
+// nothing to fix, so no dangling heading. Each day is a reversible aria-pressed toggle.
+function backfillCard(missed) {
+  if (!missed.length) return '';
+  const rows = missed.map(m => `
+    <li class="backfill-row">
+      <span class="backfill-date">${fmtLong(m.date)}</span>
+      <button type="button" class="backfill-btn" data-date="${m.date}" data-dow="${m.dow}" data-title="${m.title}"
+              aria-pressed="false" aria-label="I trained this day, ${fmtLong(m.date)}">
+        <span class="backfill-btn-label">I trained this day</span>
+      </button>
+    </li>`).join('');
+  return `
+    <h2 class="section-label" id="backfill-h">Did you train on these days?</h2>
+    <div class="card backfill-card" role="group" aria-labelledby="backfill-h">
+      <p class="backfill-intro">These scheduled days have no logged session. If you trained, mark it and your consistency corrects itself.</p>
+      <ul class="backfill-list">${rows}</ul>
     </div>`;
 }
 
@@ -64,6 +88,7 @@ function bestOf(entry, type) {
 
 async function paint(root) {
   const sessions = await getSessions();
+  const missed = await missedTrainingDays();
 
   if (!sessions.length) {
     root.innerHTML = `
@@ -108,7 +133,7 @@ async function paint(root) {
             <div class="ex-name">${ex.name}</div>
             <div class="ex-sub">${metricLabel} · ${pts.length} session${pts.length > 1 ? 's' : ''}</div>
           </div>
-          ${sparkline(vals)}
+          <span aria-hidden="true">${sparkline(vals)}</span>
         </button>
         <div class="prog-chart" id="chart-${exId}" hidden></div>`;
     }).join('');
@@ -125,28 +150,62 @@ async function paint(root) {
       <div class="stat"><div class="stat-num">${fmtTon(volume)}</div><div class="stat-lbl">moved</div></div>
     </div>
 
-    <div class="section-label">Activity · ${last7} in the last 7 days</div>
+    <h2 class="section-label">Activity · ${last7} in the last 7 days</h2>
     <div class="card">${heatmap(activeDays)}</div>
+
+    ${backfillCard(missed)}
 
     ${volumeCard(sessions)}
 
-    <div class="section-label">Exercise progress · tap to expand</div>
+    <h2 class="section-label">Exercise progress · tap to expand</h2>
     ${progRows || '<div class="card"><p class="lead">Log a few sessions to see your lines climb.</p></div>'}
 
-    <div class="section-label">Recent sessions</div>
+    <h2 class="section-label">Recent sessions</h2>
     ${recent.map(s => {
       const n = s.entries.reduce((a, e) => a + e.sets.length, 0);
       const vol = s.entries.reduce((a, e) => a + e.sets.reduce((x, st) => x + (st.weight || 0) * (st.reps || 0), 0), 0);
+      // attendance-only records (recovered/backfilled) have no sets — say so plainly
+      const meta = s.entries.length ? `${n} sets · ${fmtTon(vol)}` : 'Attended (no sets logged)';
+      const exLine = s.entries.length ? s.entries.map(e => LIBRARY[e.exId] ? LIBRARY[e.exId].name : e.exId).join(' · ') : 'Marked as trained';
       return `
         <div class="card hist-card">
           <div class="hist-top">
             <div><strong>${s.title}</strong><div class="ex-sub">${fmtDate(s.date)}</div></div>
-            <div class="ex-sub">${n} sets · ${fmtTon(vol)}</div>
+            <div class="ex-sub">${meta}</div>
           </div>
-          <div class="hist-ex">${s.entries.map(e => LIBRARY[e.exId] ? LIBRARY[e.exId].name : e.exId).join(' · ')}</div>
+          <div class="hist-ex">${exLine}</div>
         </div>`;
     }).join('')}
   `;
+
+  // backfill toggles: mark / un-mark a missed day as attended, IN PLACE so focus
+  // stays on the button (a full repaint would drop it to <body>).
+  root.querySelectorAll('.backfill-btn').forEach(btn => btn.addEventListener('click', async () => {
+    const { date, dow, title } = btn.dataset;
+    const pressed = btn.getAttribute('aria-pressed') === 'true';
+    if (pressed) {
+      await removeBackfill(date);
+      btn.setAttribute('aria-pressed', 'false');
+      btn.classList.remove('confirmed');
+      btn.querySelector('.backfill-btn-label').textContent = 'I trained this day';
+      btn.setAttribute('aria-label', `I trained this day, ${fmtLong(date)}`);
+      root.querySelector(`.heat-cell[data-key="${date}"]`)?.classList.remove('on');
+    } else {
+      await backfillSession(date, dow, title);
+      btn.setAttribute('aria-pressed', 'true');
+      btn.classList.add('confirmed');
+      btn.querySelector('.backfill-btn-label').textContent = 'Trained';
+      btn.setAttribute('aria-label', `Trained, ${fmtLong(date)}. Activate to undo.`);
+      root.querySelector(`.heat-cell[data-key="${date}"]`)?.classList.add('on');
+    }
+    // nudge the visible workouts count + speak the off-screen consequence (the %)
+    const statNum = root.querySelector('.stat-grid .stat-num');
+    if (statNum) statNum.textContent = String((await getSessions()).length);
+    const c = await computeConsistency();
+    announce(c.pct !== null
+      ? `30-day consistency now ${c.pct}%.`
+      : (pressed ? 'Trained mark removed.' : 'Marked as trained.'));
+  }));
 
   // tap a progression row to expand a full chart
   root.querySelectorAll('.prog-row').forEach(btn => btn.addEventListener('click', () => {

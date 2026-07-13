@@ -53,6 +53,10 @@ async function init() {
   const vEl = document.getElementById('app-version');
   if (vEl) vEl.textContent = APP_VERSION;
 
+  // rescue any workout left unfinished (the old bug stranded them in a slot that
+  // got overwritten). Do this before first paint so consistency reads true.
+  try { const { reconcileActive } = await import('./workouts.js'); await reconcileActive(); } catch (_) {}
+
   // apply the saved theme before first paint so there's no flash of the default
   const { bootTheme } = await import('./theme.js');
   await bootTheme();

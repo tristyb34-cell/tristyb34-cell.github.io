@@ -93,6 +93,22 @@ tabular-nums` wherever numbers change (weights, reps, stats).
 - Changing exercise = `window.scrollTo(0,0)` then `.focus({preventScroll:true})` on the `<h1>`.
   Without `preventScroll` the focus call drags the heading back to mid-viewport.
 
+## Attendance & data model (v0.39+)
+- A day counts as "showed up" the moment real work is logged (`isMeaningful`: sets for
+  ≥ half the planned exercises). `logSet` auto-upserts the day into `sessions[]`, so the
+  **Finish button is optional** and an unfinished workout can never be overwritten and lost
+  (the original bug). `reconcileActive` on boot rescues any pre-fix stranded session.
+- `sessions[]` is the single source of truth (consistency, history, streak, volume all read it).
+  One record per date; always upsert-by-date, never push (no duplicates).
+- Backfill: `backfillSession(date)` adds an attendance-only record (`backfilled:true`, empty
+  entries). `removeBackfill` will ONLY ever delete a backfilled record, never real logged data.
+  Attendance-only rows render as "Attended (no sets logged)", never "0 sets · 0kg".
+- **DATE FOOTGUN (fixed, do not reintroduce):** session date keys come from `toISOString()`
+  (UTC). All day math and weekday lookups in consistency.js MUST be UTC too (`dayAt` parses
+  with `Z`, `addDays` uses `setUTCDate`, weekday via `getUTCDay`). Mixing local `getDay()` with
+  a UTC date string shifts a day in UTC+2 (SAST) and mislabels weekdays. This mislabeled
+  rest days as training days in the first cut of the backfill list.
+
 ## Versioning
 Bump `APP_VERSION` (src/data.js) and `CACHE` (sw.js) together on every ship; the header
 watermark is how Tristan confirms an update landed.
