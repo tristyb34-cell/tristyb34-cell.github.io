@@ -922,6 +922,15 @@ h1.screen-title { font-size: 31px; font-weight: 850; line-height: 1.04; letter-s
 :root[data-theme="light"] .prog-up .prog-badge { color: #0B6B4F; }
 .prog-sub { font-size: 13.5px; line-height: 1.55; color: var(--text-dim); }
 
+/* Pre-workout check-in */
+.ci-group { margin-bottom: 18px; }
+.ci-q { display: block; font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 9px; }
+.ci-weight-in { display: flex; align-items: center; gap: 10px; }
+.ci-weight-in .inp { flex: 1; font-size: 20px; font-weight: 800; text-align: center; font-variant-numeric: tabular-nums;
+  padding: 12px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--surface-2); color: var(--text); }
+.ci-unit { font-size: 15px; font-weight: 700; color: var(--text-dim); }
+.working-hint { font-size: 12px; color: var(--text-faint); margin-top: 6px; }
+
 /* Backfill card — mark a missed scheduled day as attended. Reversible toggle;
    trained vs not is carried by text + ✓ + aria-pressed, never colour alone. */
 .backfill-intro { font-size: 13.5px; line-height: 1.5; color: var(--text-dim); margin-bottom: 12px; }

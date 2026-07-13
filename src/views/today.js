@@ -6,7 +6,7 @@ import { openCost } from '../cost.js';
 import { LIBRARY, estimateMinutes } from '../program.js';
 import { getPlan, dayForToday } from '../plan.js';
 import { getActive } from '../workouts.js';
-import { renderSession } from '../session.js';
+import { renderSession, startWorkout } from '../session.js';
 import { openEditor } from '../editor.js';
 import { openDayPreview } from './plan.js';
 import { buildContext, greeting, nudges, checkMilestones } from '../motivation.js';
@@ -232,7 +232,7 @@ async function paintToday(root) {
 
   // wiring
   const startBtn = root.querySelector('#start');
-  if (startBtn) startBtn.addEventListener('click', () => renderSession(root, trainDay));
+  if (startBtn) startBtn.addEventListener('click', () => startWorkout(root, trainDay));
   const quickBtn = root.querySelector('#quick');
   if (quickBtn) quickBtn.addEventListener('click', () => renderSession(root, quickVersion(trainDay)));
   const gpEdit = root.querySelector('#gp-edit');

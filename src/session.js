@@ -14,6 +14,7 @@ import { swapCandidates, getGym, hasEquipment } from './equipment.js';
 import { getPlan, savePlan } from './plan.js';
 import { announce } from './a11y.js';
 import { formBlock } from './cues.js';
+import { getCheckin, saveCheckin, skipCheckin } from './checkins.js';
 
 const stretchList = (items) => `<div class="stretch-list">${items.map(s =>
   `<div class="stretch-item"><span class="stretch-dot">›</span><div><div class="nm">${s.name}</div><div class="dt">${s.detail}</div></div><span class="du">${s.dur}</span></div>`).join('')}</div>`;
@@ -57,6 +58,85 @@ function clearTimers() {
   if (restTimer) { clearInterval(restTimer); restTimer = null; }
 }
 
+// Entry from Today's Start button: run the pre-workout check-in first (once a day),
+// then hand off to the runner. Continue / quick / browse-a-day skip straight in.
+export async function startWorkout(root, day) {
+  if (await getCheckin()) return renderSession(root, day); // already answered/skipped today
+  renderCheckin(root, day);
+}
+
+function renderCheckin(root, day) {
+  clearTimers();
+  const chip = (single, val, label, aria) =>
+    `<button type="button" class="rir-btn" data-val="${val}" aria-pressed="false"${aria ? ` aria-label="${aria}"` : ''}>${label}</button>`;
+  const group = (id, q, chips) => `
+    <div class="ci-group" role="group" aria-labelledby="${id}-lbl">
+      <span class="ci-q" id="${id}-lbl">${q}</span>
+      <div class="rir-btns" data-single="${id}">${chips}</div>
+    </div>`;
+
+  root.innerHTML = `
+    <div class="step-top">
+      <button class="back-btn" id="ci-exit">‹ Today</button>
+      <div class="step-count">Before you start</div>
+    </div>
+    <h1 class="screen-title" id="ci-h" tabindex="-1">Quick check-in</h1>
+    <p class="lead" style="margin-bottom:16px;">All optional. Tap what you want, skip what you don’t.</p>
+
+    <div class="ci-group" role="group" aria-labelledby="ci-w-lbl">
+      <label class="ci-q" id="ci-w-lbl" for="ci-weight">This morning’s weight</label>
+      <div class="ci-weight-in">
+        <input id="ci-weight" class="inp" type="text" inputmode="decimal" pattern="[0-9.,]*" placeholder="kg" aria-describedby="ci-w-hint" />
+        <span class="ci-unit">kg</span>
+      </div>
+      <p class="working-hint" id="ci-w-hint">Comma or point both work.</p>
+    </div>
+
+    ${group('sleepH', 'Sleep last night', [5, 6, 7, 8, 9].map(h => chip('sleepH', h, `${h}h`, `${h} hours`)).join(''))}
+    ${group('sleepQ', 'Sleep quality', ['Poor', 'OK', 'Good'].map(q => chip('sleepQ', q.toLowerCase(), q)).join(''))}
+    ${group('smoked', 'Smoked within 90 min of bed?', chip('smoked', 'yes', 'Yes') + chip('smoked', 'no', 'No'))}
+    ${group('energy', 'Energy today', ['Low', 'Med', 'High'].map(e => chip('energy', e.toLowerCase(), e)).join(''))}
+    ${group('food', 'Eaten yet today?', chip('food', 'yes', 'Yes') + chip('food', 'not-yet', 'Not yet'))}
+
+    <button class="btn" id="ci-start">⚡ Start workout</button>
+    <div style="height:10px;"></div>
+    <button class="btn ghost" id="ci-skip">Skip check-in</button>
+  `;
+
+  // single-select chips: one active per group, re-tap clears (mirrors chooseRir)
+  root.querySelectorAll('[data-single]').forEach(grp =>
+    grp.querySelectorAll('.rir-btn').forEach(btn => btn.addEventListener('click', () => {
+      const was = btn.getAttribute('aria-pressed') === 'true';
+      grp.querySelectorAll('.rir-btn').forEach(b => { b.setAttribute('aria-pressed', 'false'); b.classList.remove('selected'); });
+      btn.setAttribute('aria-pressed', was ? 'false' : 'true');
+      btn.classList.toggle('selected', !was);
+    })));
+
+  const pick = (id) => { const b = root.querySelector(`[data-single="${id}"] .rir-btn[aria-pressed="true"]`); return b ? b.dataset.val : null; };
+  const go = () => renderSession(root, day);
+
+  root.querySelector('#ci-exit').addEventListener('click', () =>
+    import('./views/today.js').then(m => m.mountToday(root)));
+  root.querySelector('#ci-start').addEventListener('click', async () => {
+    const w = root.querySelector('#ci-weight').value.replace(',', '.').trim();
+    await saveCheckin({
+      weight: w === '' ? null : num(w),
+      sleepH: pick('sleepH'), sleepQ: pick('sleepQ'),
+      smoked: pick('smoked'), energy: pick('energy'), food: pick('food'),
+    });
+    announce(`Check-in saved. Starting ${day.title}.`);
+    go();
+  });
+  root.querySelector('#ci-skip').addEventListener('click', async () => {
+    await skipCheckin();
+    announce(`Skipped. Starting ${day.title}.`);
+    go();
+  });
+
+  const h = root.querySelector('#ci-h');
+  if (h) h.focus({ preventScroll: true });
+}
+
 export async function renderSession(root, day) {
   clearTimers();
   const active = await startActive(day);
@@ -68,7 +148,7 @@ export async function renderSession(root, day) {
   // first unfinished exercise = where the march resumes on refresh
   const firstOpen = day.items.findIndex((_, i) => !itemComplete(i));
   S.idx = firstOpen === -1 ? 0 : firstOpen;
-  await renderStep(S.idx);
+  await renderStep(S.idx, '#ex-name'); // land focus on the exercise, never <body>
 }
 
 /* ---------- progress helpers ---------- */
