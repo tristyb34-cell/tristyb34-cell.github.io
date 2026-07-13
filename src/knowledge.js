@@ -26,21 +26,39 @@ export const ARTICLES = [
       'Ninety percent of your results come down to three things. One: progressive overload, you force the muscle to handle more over time. Two: recovery, the muscle is rebuilt during rest and sleep, not in the gym. Three: food, protein and calories are the raw material it rebuilds with.',
       'Miss any one and the other two barely matter. Perfect training with no food builds nothing. Perfect food with no overload maintains what you have. Get all three pointing the same way and your body has no choice but to grow.',
       'If you only remember one lesson in here, make it this one. The rest is refinement.',
-    ] },
+    ],
+    short: [
+      'Three things drive 90% of results: <strong>overload</strong> (do more over time), <strong>recovery</strong> (rebuilt during rest, not the gym), and <strong>food</strong> (the raw material).',
+      'Miss one and the other two barely matter. Point all three the same way and growth is forced.',
+    ],
+    quiz: { q: 'Where is muscle actually rebuilt?', why: 'The gym is the stimulus; the rebuild happens during rest and sleep.',
+      options: [{ text: 'During the workout' }, { text: 'During rest and sleep', correct: true }, { text: 'While stretching' }] } },
   { id: 'progressive-overload', cat: 'training', icon: '📈', title: 'Progressive overload: the engine',
     teaser: 'Beat last time, or you are just exercising.',
     body: [
       'Muscle only grows when you ask it to do more than last time: more weight, more reps, or more sets. Your body is lazy and adaptive, like a callus, it only thickens when something keeps rubbing it. Lift the same weight for the same reps forever and you stay exactly the same.',
       'This is why DAX nags you to beat last session. That coach line is not decoration, it is the single most important feature. Tracking your numbers is what makes the overload real instead of a vibe.',
       'You will not beat it every single session, and that is fine. The trend over weeks is what counts.',
-    ] },
+    ],
+    short: [
+      'Muscle only grows when you ask it to do <strong>more than last time</strong>: more weight, reps, or sets. Same weight forever = same body.',
+      'That is why DAX nags you to beat last session. The trend over weeks is what counts, not every single day.',
+    ],
+    quiz: { q: 'What makes a muscle grow?', why: 'Doing more than last time (weight, reps, or sets) is the stimulus. Same input = same output.',
+      options: [{ text: 'Doing more than last time', correct: true }, { text: 'Lifting the same weight consistently' }, { text: 'Longer rest between sets' }] } },
   { id: 'double-progression', cat: 'training', icon: '🪜', title: 'Double progression: how to add weight',
     teaser: 'Climb the reps, then bump the weight.',
     body: [
       'Do not just slap more weight on every week, you will stall or get hurt. Use double progression. Pick a rep range, say 8 to 12. Each session try to add a rep at the same weight: 8, then 9, then 10, up to 12 on every set.',
       'Once you hit the top of the range on all your sets, then you add 2.5kg. Your reps naturally drop back to around 8, and you start climbing again at the new heavier weight.',
       'So most sessions you beat last time by a rep, not a plate. The weight only moves when you have earned it. DAX does this maths for you and tells you which move to make.',
-    ] },
+    ],
+    short: [
+      'Pick a rep range (say 8 to 12). Add a rep each session at the same weight until you hit the top on every set.',
+      'Only <strong>then</strong> add 2.5kg. Reps drop back near 8 and you climb again. You beat last time by a rep, not a plate.',
+    ],
+    quiz: { q: 'When do you add weight in double progression?', why: 'You earn the jump by hitting the top of the rep range on all sets first.',
+      options: [{ text: 'Every session, no matter what' }, { text: 'Once you hit the top of the rep range on all sets', correct: true }, { text: 'When the weight feels light on set one' }] } },
   { id: 'rir-failure', cat: 'training', icon: '🔥', title: 'How hard? Reps in reserve',
     teaser: 'Working sets 1-3 from failure. Warm-ups do not count.',
     body: [
@@ -366,7 +384,24 @@ export async function openArticle(id, onClose) {
       <div class="reader-body">
         <div class="reader-icon" aria-hidden="true">${a.icon || '📘'}</div>
         <h2 id="reader-title" class="reader-title" tabindex="-1">${a.title}</h2>
-        ${a.body.map(p => `<p class="reader-p">${p}</p>`).join('')}
+        ${a.short ? `
+          ${a.short.map(p => `<p class="reader-p">${p}</p>`).join('')}
+          <details class="mcq-full">
+            <summary>Read the full version</summary>
+            ${a.body.map(p => `<p class="reader-p">${p}</p>`).join('')}
+          </details>`
+          : a.body.map(p => `<p class="reader-p">${p}</p>`).join('')}
+        ${a.quiz ? `
+          <h3 class="reader-h3">Quick check</h3>
+          <fieldset class="mcq">
+            <legend class="mcq-q">${a.quiz.q}</legend>
+            ${a.quiz.options.map((o, i) => `
+              <div class="mcq-opt">
+                <input type="radio" name="mcq-${a.id}" id="mcq-${a.id}-${i}" data-correct="${o.correct ? '1' : '0'}" />
+                <label for="mcq-${a.id}-${i}">${o.text}</label>
+              </div>`).join('')}
+          </fieldset>
+          <p class="mcq-feedback" role="status" aria-live="polite"></p>` : ''}
         <button class="btn got-it ${learned ? 'on' : ''}" id="got-it" aria-pressed="${learned ? 'true' : 'false'}">${gotLabel(learned)}</button>
         <p class="got-hint">${gotHint(learned)}</p>
       </div>
@@ -382,13 +417,27 @@ export async function openArticle(id, onClose) {
     bg.forEach(el => { el.inert = false; });
     document.body.style.overflow = '';
     setTimeout(() => overlay.remove(), 220);
-    // return focus to the trigger, or a stable fallback if it was re-rendered away
-    if (returnFocus && returnFocus.isConnected && returnFocus.focus) returnFocus.focus();
-    else { const t = document.querySelector('.tab[data-tab="learn"]'); if (t) t.focus(); }
+    // re-render FIRST (it may replace the trigger), THEN place focus, so we never
+    // focus a node that's about to be removed and drop focus to <body>.
     if (onClose) onClose();
+    const back = (returnFocus && returnFocus.isConnected && returnFocus)
+      || document.querySelector(`.learn-row[data-id="${id}"]`)
+      || document.querySelector('.tab[data-tab="learn"]');
+    if (back && back.focus) back.focus();
   };
   const onKey = (e) => { if (e.key === 'Escape') close(); };
   document.addEventListener('keydown', onKey);
+  // answer-on-change: show correct/incorrect via the co-located role=status (no color-only)
+  overlay.querySelectorAll(`input[name="mcq-${a.id}"]`).forEach(r =>
+    r.addEventListener('change', () => {
+      const fb = overlay.querySelector('.mcq-feedback');
+      if (!fb) return;
+      const correct = r.dataset.correct === '1';
+      fb.className = 'mcq-feedback ' + (correct ? 'ok' : 'no');
+      fb.innerHTML = correct
+        ? `<span aria-hidden="true">✓ </span>Correct. ${a.quiz.why || ''}`
+        : `<span aria-hidden="true">✗ </span>Not quite, try again.`;
+    }));
   overlay.querySelector('#reader-close').addEventListener('click', close);
 
   const gi = overlay.querySelector('#got-it');

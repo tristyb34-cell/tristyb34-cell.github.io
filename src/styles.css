@@ -922,6 +922,28 @@ h1.screen-title { font-size: 31px; font-weight: 850; line-height: 1.04; letter-s
 :root[data-theme="light"] .prog-up .prog-badge { color: #0B6B4F; }
 .prog-sub { font-size: 13.5px; line-height: 1.55; color: var(--text-dim); }
 
+/* Lesson comprehension check — native radios styled as chips. Right/wrong carried
+   by ✓/✗ glyph + word + role=status announcement, never colour alone. */
+.reader-h3 { font-size: 15px; font-weight: 800; margin: 22px 0 10px; color: var(--text); }
+.mcq { border: none; margin: 0; padding: 0; }
+.mcq-q { font-size: 14.5px; font-weight: 700; color: var(--text); margin-bottom: 10px; padding: 0; }
+.mcq-opt { position: relative; margin-bottom: 8px; }
+.mcq-opt input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.mcq-opt label {
+  display: block; min-height: 44px; padding: 12px 14px; border-radius: var(--r-sm);
+  background: var(--surface-2); color: var(--text); border: 1px solid var(--line); font-weight: 700; font-size: 14px;
+}
+.mcq-opt input:checked + label { background: var(--grad); color: var(--accent-ink); border-color: var(--accent); }
+.mcq-opt input:checked + label::after { content: "\2713"; margin-left: 6px; font-weight: 900; }
+.mcq-opt input:focus-visible + label { outline: 2px solid var(--focus); outline-offset: 2px; }
+.mcq-feedback { font-size: 13.5px; line-height: 1.5; margin-top: 10px; font-weight: 600; }
+.mcq-feedback:empty { margin: 0; }
+.mcq-feedback.ok { color: var(--good); }
+.mcq-feedback.no { color: var(--cue-warn); }
+:root[data-theme="light"] .mcq-feedback.ok { color: #0B6B4F; } /* --good is 4.31:1 on the light bg */
+.mcq-full { margin: 8px 0 4px; }
+.mcq-full summary { font-size: 13.5px; font-weight: 700; color: var(--accent); cursor: pointer; padding: 6px 0; }
+
 /* Pre-workout check-in */
 .ci-group { margin-bottom: 18px; }
 .ci-q { display: block; font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 9px; }
