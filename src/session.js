@@ -8,7 +8,7 @@
    ============================================================ */
 import { LIBRARY } from './program.js';
 import { WARMUP, COOLDOWN } from './data.js';
-import { startActive, getActive, logSet, finishActive, suggestion, setSetRir, repTarget, setIncrement } from './workouts.js';
+import { startActive, getActive, logSet, finishActive, suggestion, setSetRir, repTarget, setIncrement, sessionProgress, getSessions } from './workouts.js';
 import { isSpotter, safeSub } from './safety.js';
 import { swapCandidates, getGym, hasEquipment } from './equipment.js';
 import { getPlan, savePlan } from './plan.js';
@@ -635,6 +635,8 @@ async function finishFlow() {
       <p>${n} sets logged${vol ? `, ${Math.round(vol)}kg moved` : ''}. That’s another brick in the wall.</p>
     </div>
 
+    ${session ? await progressCard(session) : ''}
+
     <details class="card warmup" open>
       <summary><strong>🧊 Cool down · 5 min</strong></summary>
       <p class="coach-last" style="margin:6px 0 4px;">Hold each 20–30s, breathe out into it, never bounce. This is where flexibility and recovery happen.</p>
@@ -646,4 +648,54 @@ async function finishFlow() {
     <button class="btn" id="back-today">Back to Today</button>`;
   S.root.querySelector('#back-today').addEventListener('click', () =>
     import('./views/today.js').then(m => m.mountToday(S.root)));
+}
+
+// End-of-session progression: did he beat last time, per lift, with honest coaching
+// when he didn't. The one screen that turns invisible progress into a moment.
+async function progressCard(session) {
+  const sessions = await getSessions();
+  const p = sessionProgress(session, sessions);
+  const rated = p.lines.filter(l => l.status !== 'new');
+  if (!rated.length) {
+    return `<div class="card prog-card"><div class="prog-head">First time through these 💪</div>
+      <p class="prog-sub">Next session you’ll have real numbers to beat. That’s where it starts.</p></div>`;
+  }
+  const nm = (id) => (LIBRARY[id] ? LIBRARY[id].name : id);
+  const downNames = rated.filter(l => l.status === 'down').map(l => nm(l.exId));
+  const META = {
+    up: { g: '▲', w: 'Up' }, held: { g: '■', w: 'Held' }, down: { g: '▼', w: 'Down' },
+  };
+  const delta = (l) => {
+    if (l.by === 'load') return `${l.topWas}→${l.topNow}${l.unit}`;
+    if (l.by === 'volume') return `${l.topNow}${l.unit} · ${l.status === 'up' ? 'more' : 'less'} volume`;
+    return `${l.topNow}${l.unit} · matched`;
+  };
+  const rows = rated.map(l => `
+    <div class="prog-row-x prog-${l.status}">
+      <span class="prog-nm">${nm(l.exId)}</span>
+      <span class="prog-delta">${delta(l)}</span>
+      <span class="prog-badge"><span aria-hidden="true">${META[l.status].g}</span> ${META[l.status].w}</span>
+    </div>`).join('');
+
+  let head, sub;
+  const list = (a) => a.length === 1 ? a[0] : `${a.slice(0, -1).join(', ')} and ${a[a.length - 1]}`;
+  if (p.down === 0 && p.up > 0) {
+    head = `${p.up} of ${p.rated} lifts up 🔥`;
+    sub = 'This is the whole game. Beat last time by a rep or a kilo and the body has no choice but to grow.';
+  } else if (p.up > 0 && p.down > 0) {
+    head = `${p.up} up, ${p.down} down`;
+    sub = `${list(downNames)} slipped, and that’s fine. One session is never a trend. Could be sleep, fatigue, or you emptied the tank last week. If it dips again next week, we adjust the plan.`;
+  } else if (p.up === 0 && p.down > 0) {
+    head = 'Tough one today';
+    sub = `${list(downNames)} dropped and nothing beat last time. It happens, and it’s not a verdict. Check your sleep and that you’re actually eating enough. Strength is built on recovery, not just effort. Next session, we go again.`;
+  } else {
+    head = 'You matched last time';
+    sub = 'Not every week is a PR. Holding the line while you eat and sleep right is still forward motion. The jumps come in waves, not every single session.';
+  }
+  return `
+    <div class="card prog-card">
+      <div class="prog-head">${head}</div>
+      <div class="prog-rows">${rows}</div>
+      <p class="prog-sub">${sub}</p>
+    </div>`;
 }

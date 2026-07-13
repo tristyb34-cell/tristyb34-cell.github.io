@@ -148,6 +148,51 @@ export async function finishActive() {
 }
 export async function discardActive() { await db.del('active'); }
 
+/* Did this session beat the last time he trained each lift? Honest + intuitive:
+   heavier top set = up; same weight but more total work (a set or reps added) = up.
+   That catches both "went heavier" and "did more". RIR is deliberately ignored here
+   so an effort tag can't masquerade as strength progress. bodyweight/timed compare
+   best reps/seconds, then total. Compares to the most recent PRIOR session. */
+function progressMetric(entry) {
+  const ex = LIBRARY[entry.exId];
+  const type = ex ? ex.type : 'weight';
+  if (type === 'weight') {
+    return { unit: 'kg', top: Math.max(0, ...entry.sets.map(s => s.weight || 0)),
+      vol: entry.sets.reduce((a, s) => a + (s.weight || 0) * (s.reps || 0), 0) };
+  }
+  return { unit: type === 'timed' ? 's' : ' reps', top: Math.max(0, ...entry.sets.map(s => s.reps || 0)),
+    vol: entry.sets.reduce((a, s) => a + (s.reps || 0), 0) };
+}
+export function sessionProgress(current, sessions) {
+  const prior = sessions.filter(s => s.date < current.date);
+  const lines = [];
+  for (const e of current.entries) {
+    if (!e.sets || !e.sets.length) continue;
+    let prev = null;
+    for (let i = prior.length - 1; i >= 0; i--) {
+      const pe = prior[i].entries.find(x => x.exId === e.exId && x.sets && x.sets.length);
+      if (pe) { prev = pe; break; }
+    }
+    const now = progressMetric(e);
+    if (!prev) { lines.push({ exId: e.exId, status: 'new', unit: now.unit, topNow: now.top }); continue; }
+    const was = progressMetric(prev);
+    let status, by = null;
+    if (now.top > was.top) { status = 'up'; by = 'load'; }
+    else if (now.top < was.top) { status = 'down'; by = 'load'; }
+    else if (now.vol > was.vol) { status = 'up'; by = 'volume'; }
+    else if (now.vol < was.vol) { status = 'down'; by = 'volume'; }
+    else status = 'held';
+    lines.push({ exId: e.exId, status, by, unit: now.unit, topNow: now.top, topWas: was.top });
+  }
+  return {
+    lines,
+    up: lines.filter(l => l.status === 'up').length,
+    down: lines.filter(l => l.status === 'down').length,
+    held: lines.filter(l => l.status === 'held').length,
+    rated: lines.filter(l => l.status !== 'new').length,
+  };
+}
+
 /* ---------- progressive overload ---------- */
 export function repTarget(reps) {
   const range = String(reps).match(/(\d+)\s*-\s*(\d+)/);

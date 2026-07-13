@@ -885,6 +885,26 @@ h1.screen-title { font-size: 31px; font-weight: 850; line-height: 1.04; letter-s
 .fb-wrong { border-left-width: 4px; }
 .fb-wrong .fb-label { font-size: 12.5px; }
 
+/* End-of-session progression card. Status is carried by glyph + word + numbers,
+   never colour alone (WCAG 1.4.1); colour is reinforcement. */
+.prog-card { text-align: left; }
+.prog-head { font-size: 19px; font-weight: 850; color: var(--text); margin-bottom: 12px; }
+.prog-rows { display: flex; flex-direction: column; gap: 2px; margin-bottom: 12px; }
+.prog-row-x {
+  display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center;
+  padding: 9px 0; border-bottom: 1px solid var(--line);
+}
+.prog-row-x:last-child { border-bottom: none; }
+.prog-nm { font-weight: 700; font-size: 14.5px; color: var(--text); }
+.prog-delta { font-size: 13px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.prog-badge { font-size: 12px; font-weight: 800; letter-spacing: .02em; white-space: nowrap; }
+.prog-up   .prog-badge { color: var(--good); }
+.prog-down .prog-badge { color: var(--cue-warn); }
+.prog-held .prog-badge { color: var(--text-faint); }
+/* light theme --good (#0F8A6B) is only 4.31:1 on the white card — darken the Up badge */
+:root[data-theme="light"] .prog-up .prog-badge { color: #0B6B4F; }
+.prog-sub { font-size: 13.5px; line-height: 1.55; color: var(--text-dim); }
+
 /* Backfill card — mark a missed scheduled day as attended. Reversible toggle;
    trained vs not is carried by text + ✓ + aria-pressed, never colour alone. */
 .backfill-intro { font-size: 13.5px; line-height: 1.5; color: var(--text-dim); margin-bottom: 12px; }
