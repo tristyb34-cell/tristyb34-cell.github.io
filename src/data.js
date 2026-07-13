@@ -4,7 +4,7 @@
    ============================================================ */
 
 // App version watermark — bump this AND the CACHE const in sw.js together on every ship.
-export const APP_VERSION = 'v0.44.0';
+export const APP_VERSION = 'v0.45.0';
 
 // Public VAPID key for web push (safe to embed; private key lives in GitHub Secrets).
 export const VAPID_PUBLIC_KEY = 'BEznbY05xi5mY6_hwZOAamNsu5ZP-p4Fs1l2cr3M9bXuYzfbVaJpwBZTxzMxUlgrQ_mNR2zz-TCUEwsp2JwWdJo';

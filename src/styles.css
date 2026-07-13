@@ -944,6 +944,25 @@ h1.screen-title { font-size: 31px; font-weight: 850; line-height: 1.04; letter-s
 .mcq-full { margin: 8px 0 4px; }
 .mcq-full summary { font-size: 13.5px; font-weight: 700; color: var(--accent); cursor: pointer; padding: 6px 0; }
 
+/* Optional bonus session (rest days) */
+.bonus-card { border: 1px dashed var(--line); }
+.bonus-title { font-size: 18px; font-weight: 850; margin: 4px 0 6px; color: var(--text); }
+
+/* Occasional lesson tip in the rest overlay */
+.rest-tip { max-width: 320px; margin: 4px auto 2px; padding: 12px 14px; border-radius: var(--r-md);
+  background: var(--surface-2); border: 1px solid var(--line); text-align: left;
+  font-size: 13.5px; line-height: 1.5; color: var(--text-dim); }
+.rest-tip-label { display: block; font-size: 11px; font-weight: 800; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 5px; }
+
+/* Collapsible "more" area on Today — tucks the occasional prompts */
+.more-section { margin-top: 14px; }
+.more-section > summary { font-size: 13px; font-weight: 700; color: var(--text-faint);
+  text-transform: uppercase; letter-spacing: .5px; cursor: pointer; padding: 10px 4px; list-style: none; }
+.more-section > summary::-webkit-details-marker { display: none; }
+.more-section > summary::before { content: '▸ '; }
+.more-section[open] > summary::before { content: '▾ '; }
+
 /* Pre-workout check-in */
 .ci-group { margin-bottom: 18px; }
 .ci-q { display: block; font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 9px; }

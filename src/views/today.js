@@ -7,6 +7,7 @@ import { LIBRARY, estimateMinutes } from '../program.js';
 import { getPlan, dayForToday } from '../plan.js';
 import { getActive } from '../workouts.js';
 import { renderSession, startWorkout } from '../session.js';
+import { bonusFor } from '../bonus.js';
 import { openEditor } from '../editor.js';
 import { openDayPreview } from './plan.js';
 import { buildContext, greeting, nudges, checkMilestones } from '../motivation.js';
@@ -47,6 +48,17 @@ async function paintToday(root) {
   const today = DAYS[new Date().getDay()];
   const plan = await getPlan();
   const day = await dayForToday();
+  // rest days can offer an OPTIONAL bonus session (Sunday = kettlebells). Pure upside,
+  // never counts toward consistency, never a "miss" if skipped.
+  const bonus = day ? null : bonusFor(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date().getDay()]);
+  const bonusCard = () => bonus ? `
+    <div class="card bonus-card">
+      <div class="eyebrow">Optional bonus · doesn’t affect your streak</div>
+      <h2 class="bonus-title">${bonus.title}</h2>
+      <p class="lead">${bonus.note}</p>
+      <ul class="mini-list">${bonus.items.map(it => `<li>${LIBRARY[it.id] ? LIBRARY[it.id].name : it.id} <span style="opacity:.55;">${it.sets}×${it.reps}</span></li>`).join('')}</ul>
+      <button class="btn ghost" id="bonus-start">＋ Do the bonus session</button>
+    </div>` : '';
   const active = await getActive();
   const ctx = await buildContext();
   fireDueReminders(ctx);
@@ -208,6 +220,7 @@ async function paintToday(root) {
           <span class="pill">${GOAL.dailyProtein}g protein</span>
         </div>
       </div>
+      ${bonusCard()}
       ${nextUpCard(plan)}
       <div class="section-label">Browse the week</div>
       <div class="ex-list">
@@ -228,11 +241,20 @@ async function paintToday(root) {
       <p class="cmd-text">${c.text}</p>
     </div>`;
 
-  root.innerHTML = cmdHero + coachHtml + consistencyHtml + phaseHtml + phaseSuggestHtml + reentryHtml + adaptiveHtml + journalHtml + weekReviewHtml + reviewHtml + backupHtml + nudgeHtml + mid + whyBannerHtml + exploreHtml + gameplanHtml + remindersCard(rem);
+  // Declutter: keep the act-now stuff up top (commandment, coach, consistency, the
+  // workout, contextual coaching, reminders); tuck the occasional prompts he scrolls
+  // past into a collapsed "More" area so the page opens lean.
+  const secondary = weekReviewHtml + reviewHtml + backupHtml + gameplanHtml + whyBannerHtml;
+  const moreSection = secondary.trim()
+    ? `<details class="more-section"><summary>More tools & prompts</summary>${secondary}</details>`
+    : '';
+  root.innerHTML = cmdHero + coachHtml + consistencyHtml + phaseHtml + phaseSuggestHtml + reentryHtml + adaptiveHtml + journalHtml + nudgeHtml + mid + exploreHtml + remindersCard(rem) + moreSection;
 
   // wiring
   const startBtn = root.querySelector('#start');
   if (startBtn) startBtn.addEventListener('click', () => startWorkout(root, trainDay));
+  const bonusBtn = root.querySelector('#bonus-start');
+  if (bonusBtn && bonus) bonusBtn.addEventListener('click', () => renderSession(root, bonus)); // bonus skips the check-in
   const quickBtn = root.querySelector('#quick');
   if (quickBtn) quickBtn.addEventListener('click', () => renderSession(root, quickVersion(trainDay)));
   const gpEdit = root.querySelector('#gp-edit');

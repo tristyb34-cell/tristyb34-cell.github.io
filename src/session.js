@@ -15,6 +15,7 @@ import { getPlan, savePlan } from './plan.js';
 import { announce } from './a11y.js';
 import { formBlock } from './cues.js';
 import { getCheckin, saveCheckin, skipCheckin } from './checkins.js';
+import { dailyArticle } from './knowledge.js';
 
 const stretchList = (items) => `<div class="stretch-list">${items.map(s =>
   `<div class="stretch-item"><span class="stretch-dot">›</span><div><div class="nm">${s.name}</div><div class="dt">${s.detail}</div></div><span class="du">${s.dur}</span></div>`).join('')}</div>`;
@@ -22,6 +23,21 @@ const stretchList = (items) => `<div class="stretch-list">${items.map(s =>
 let S = null;          // { root, day, idx, active }
 let frameTimer = null;
 let restTimer = null;
+let restCount = 0;     // rests this session — used to show a lesson tip OCCASIONALLY
+
+// One bite of the day's lesson, shown in the rest overlay every 3rd rest only.
+// Deliberately NOT every timer — dead time is for resting, not a lecture every set.
+function restTip() {
+  restCount += 1;
+  if (restCount % 3 !== 0) return '';
+  try {
+    const a = dailyArticle(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date().getDay()]);
+    const line = a && a.short && a.short[0];
+    if (!line) return '';
+    const text = line.replace(/<[^>]+>/g, ''); // strip the bold markup for a clean one-liner
+    return `<div class="rest-tip"><span class="rest-tip-label">💡 While you rest</span><span>${text}</span></div>`;
+  } catch (_) { return ''; }
+}
 
 // Per-set reps-in-reserve. Values 3/1/0 match what the e1rm/analysis code reads.
 // visible text is the LEADING part of each aria-label (WCAG 2.5.3 label-in-name).
@@ -139,6 +155,7 @@ function renderCheckin(root, day) {
 
 export async function renderSession(root, day) {
   clearTimers();
+  restCount = 0;
   const active = await startActive(day);
   S = { root, day, idx: 0, active, guarded: new Set(), planned: {} };
   // Snapshot the PLANNED set count per exercise before anything can bump it.
@@ -641,6 +658,7 @@ function startRest(seconds, ctx = null) {
       <div class="rest-label">REST</div>
       <div class="rest-time" role="timer" aria-live="off">${remaining}s</div>
       ${rir}
+      ${restTip()}
       <div class="rest-btns">
         <button id="rest-sub" aria-label="Subtract 15 seconds">−15s</button>
         <button id="rest-add" aria-label="Add 15 seconds">+15s</button>
