@@ -195,8 +195,7 @@ async function paintToday(root) {
       <button class="btn" id="start">${continuing ? '▶︎ Continue workout' : '⚡ Start workout'}</button>
       <div style="height:10px;"></div>
       ${continuing ? '' : '<button class="btn ghost" id="quick">😮‍💨 Can’t be bothered? Give me the 15-min version</button><div style="height:10px;"></div>'}
-      <button class="btn ghost" id="edit">✎ Edit my plan</button>
-      <div class="commandment"><span class="num">${c.num}.</span><em>${c.text}</em></div>`;
+      <button class="btn ghost" id="edit">✎ Edit my plan</button>`;
   } else {
     mid = `
       <div class="card card-hero">
@@ -209,7 +208,6 @@ async function paintToday(root) {
           <span class="pill">${GOAL.dailyProtein}g protein</span>
         </div>
       </div>
-      <div class="commandment"><span class="num">${c.num}.</span><em>${c.text}</em></div>
       ${nextUpCard(plan)}
       <div class="section-label">Browse the week</div>
       <div class="ex-list">
@@ -224,7 +222,13 @@ async function paintToday(root) {
       <button class="btn ghost" id="edit">✎ Edit my plan</button>`;
   }
 
-  root.innerHTML = coachHtml + consistencyHtml + phaseHtml + phaseSuggestHtml + reentryHtml + adaptiveHtml + journalHtml + weekReviewHtml + reviewHtml + backupHtml + nudgeHtml + mid + whyBannerHtml + exploreHtml + gameplanHtml + remindersCard(rem);
+  const cmdHero = `
+    <div class="cmd-hero">
+      <div class="cmd-eyebrow">Commandment ${c.num}</div>
+      <p class="cmd-text">${c.text}</p>
+    </div>`;
+
+  root.innerHTML = cmdHero + coachHtml + consistencyHtml + phaseHtml + phaseSuggestHtml + reentryHtml + adaptiveHtml + journalHtml + weekReviewHtml + reviewHtml + backupHtml + nudgeHtml + mid + whyBannerHtml + exploreHtml + gameplanHtml + remindersCard(rem);
 
   // wiring
   const startBtn = root.querySelector('#start');

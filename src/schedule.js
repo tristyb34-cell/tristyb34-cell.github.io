@@ -13,6 +13,8 @@ export const DEFAULT_WEEKDAY = [
     label: '3 boiled eggs', body: 'Mid-morning protein hit. Grab the ones you batched. 🥚' },
   { id: 'lunch', time: '13:00', kind: 'meal', mealId: 'lunch', enabled: true,
     label: 'Lunch', body: 'Tuna sandwich or last night’s leftovers + a yoghurt.' },
+  { id: 'learn', time: '10:00', kind: 'learn', enabled: true,
+    label: 'Today’s lesson 📚', body: 'Two minutes on what actually builds the body you want. Tap to learn.' },
   { id: 'snack', time: '17:00', kind: 'meal', mealId: 'snack', enabled: true,
     label: 'Pre-gym fuel', body: 'PB & honey + banana, ~1h before you lift. Fuel the session. 🍌' },
   { id: 'train', time: '18:00', kind: 'train', enabled: true,
@@ -27,6 +29,8 @@ export const DEFAULT_WEEKDAY = [
 export const DEFAULT_WEEKEND = [
   { id: 'smoothie', time: '10:30', kind: 'meal', mealId: 'smoothie', enabled: true,
     label: 'Growth smoothie + creatine', body: 'Once you’re up. Creatine still goes in, weekends count too. 🥤' },
+  { id: 'learn', time: '10:00', kind: 'learn', enabled: true,
+    label: 'Today’s lesson 📚', body: 'Two minutes on what actually builds the body you want. Tap to learn.' },
   { id: 'train', time: '12:00', kind: 'train', enabled: true,
     label: 'Train (anytime this afternoon)', body: 'Session day. Get it in any time before evening, the coach drops this once you log it. 🔥' },
   { id: 'lunch', time: '13:00', kind: 'meal', mealId: 'lunch', enabled: true,

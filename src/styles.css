@@ -82,7 +82,24 @@
   --shadow-1:0 1px 2px rgba(0,0,0,.08); --shadow-2:0 10px 30px rgba(0,0,0,.12); --hair-top:inset 0 1px 0 rgba(255,255,255,.5);
 }
 
+/* Blackletter display face — used ONLY for the daily commandment hero. Bundled
+   for offline. Low readability at length, so it never touches body text. */
+@font-face {
+  font-family: 'Pirata One';
+  src: url('/assets/fonts/pirata-one.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+/* Commandment of the day — the first thing on entry. Big, gothic, dramatic. */
+.cmd-hero { padding: 20px 4px 22px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+.cmd-eyebrow { font-size: 12px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--accent); font-weight: 800; margin-bottom: 10px; }
+.cmd-text {
+  font-family: 'Pirata One', Georgia, 'Times New Roman', serif;
+  font-size: 34px; line-height: 1.12; color: var(--text); font-weight: 400;
+  letter-spacing: .5px;
+}
 
 html, body { height: 100%; }
 

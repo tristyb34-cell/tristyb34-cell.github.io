@@ -64,7 +64,7 @@ export async function enable() {
 
 export async function disable() { await settings.set('notify', false); }
 
-export async function notify(title, body) {
+export async function notify(title, body, url = '/') {
   if (permission() !== 'granted') return false;
   try {
     const reg = await navigator.serviceWorker.ready;
@@ -73,6 +73,7 @@ export async function notify(title, body) {
       icon: '/assets/icons/icon-192.png',
       badge: '/assets/icons/icon-192.png',
       tag: 'dax',
+      data: { url },   // SW notificationclick opens this
     });
     return true;
   } catch (e) {
@@ -112,6 +113,10 @@ export async function fireDueReminders(ctx) {
       if (!ctx.isTrainingDay) { await mark(item.id); continue; } // rest day, no shake
       if (!ctx.trainedToday) continue;                          // wait until the session's logged
       await notify(item.label, item.body);
+      await mark(item.id);
+    } else if (item.kind === 'learn') {
+      // every day — this is the nudge that was silently missing (no learn case existed)
+      await notify(item.label, item.body, '/#learn');
       await mark(item.id);
     }
   }
