@@ -93,6 +93,20 @@ tabular-nums` wherever numbers change (weights, reps, stats).
 - Changing exercise = `window.scrollTo(0,0)` then `.focus({preventScroll:true})` on the `<h1>`.
   Without `preventScroll` the focus call drags the heading back to mid-viewport.
 
+## Per-set RIR + rest timer (v0.40+)
+- RIR (reps in reserve) is per-SET: rated in the rest overlay right after logging
+  (the honest "how did that feel" beat, and the non-inert layer), then mirrored + editable
+  inline on the done row. Both surfaces share a `data-set` index and stay in sync; they're
+  never visible at once (the overlay inerts the row), so no double-speak. Values 3/1/0/null
+  (same values the e1rm/analysis reads). `setSetRir` is patch-only. Toggle buttons (re-tap
+  clears to null), NOT a radiogroup — unselect is required and it matches the app's pattern.
+- The old per-EXERCISE "How hard was that?" stamp-all control was removed; per-set replaces it.
+- Rest timer is WALL-CLOCK anchored (`endAt` timestamp, `left()` = endAt - now), not a tick
+  counter: iOS freezes setInterval when the phone locks, so a counter drifts. A
+  `visibilitychange` listener catches up (or ends) the instant the app is foregrounded.
+  ±15s buttons adjust `endAt`; −15s floors at 5s remaining. Can't buzz while locked (iOS
+  won't run a backgrounded PWA reliably), but the time is always correct on return.
+
 ## Attendance & data model (v0.39+)
 - A day counts as "showed up" the moment real work is logged (`isMeaningful`: sets for
   ≥ half the planned exercises). `logSet` auto-upserts the day into `sessions[]`, so the

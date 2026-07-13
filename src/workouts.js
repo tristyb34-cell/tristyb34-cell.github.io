@@ -127,13 +127,12 @@ export function e1rm(weight, reps, rir = 0) {
 export function bestE1rm(entry) {
   return Math.max(0, ...entry.sets.map(s => e1rm(s.weight || 0, s.reps || 0, s.rir || 0)));
 }
-// Optional, one tap per exercise: stamp the same reps-in-reserve on every
-// logged set of that exercise. easy=3, solid=1, all-out=0. Skippable.
-export async function setEffort(exId, rir) {
+// Per-set reps-in-reserve (how close to failure that set was). Patch-only, so it
+// can be set after logging without needing weight/reps again. 3 / 1 / 0 / null.
+export async function setSetRir(exId, setIndex, rir) {
   const a = await getActive();
-  if (!a || !a.log[exId]) return null;
-  const val = (rir === null || rir === '') ? null : Number(rir);
-  a.log[exId] = a.log[exId].map(s => (s ? { ...s, rir: val } : s));
+  if (!a || !a.log[exId] || !a.log[exId][setIndex]) return null;
+  a.log[exId][setIndex].rir = (rir === null || rir === '') ? null : Number(rir);
   await db.set('active', a);
   return a;
 }

@@ -8,7 +8,7 @@
    ============================================================ */
 import { LIBRARY } from './program.js';
 import { WARMUP, COOLDOWN } from './data.js';
-import { startActive, getActive, logSet, finishActive, suggestion, setEffort, repTarget, setIncrement } from './workouts.js';
+import { startActive, getActive, logSet, finishActive, suggestion, setSetRir, repTarget, setIncrement } from './workouts.js';
 import { isSpotter, safeSub } from './safety.js';
 import { swapCandidates, getGym, hasEquipment } from './equipment.js';
 import { getPlan, savePlan } from './plan.js';
@@ -21,6 +21,32 @@ const stretchList = (items) => `<div class="stretch-list">${items.map(s =>
 let S = null;          // { root, day, idx, active }
 let frameTimer = null;
 let restTimer = null;
+
+// Per-set reps-in-reserve. Values 3/1/0 match what the e1rm/analysis code reads.
+// visible text is the LEADING part of each aria-label (WCAG 2.5.3 label-in-name).
+const RIR_OPTS = [['3', '3+ left', '3+ left'], ['1', '1-2 left', '1-2 left'], ['0', '0-1', '0-1 near failure']];
+function rirButtons(setIndex, cur) {
+  return RIR_OPTS.map(([v, vis, name]) => {
+    const on = cur === Number(v);
+    return `<button type="button" class="rir-btn ${on ? 'selected' : ''}" data-rir="${v}" data-set="${setIndex}" aria-pressed="${on}" aria-label="${name}, set ${setIndex + 1}">${vis}</button>`;
+  }).join('');
+}
+function rirGroup(setIndex, cur) {
+  return `<div class="rir" role="group" aria-label="Reps left in the tank"><span class="rir-q" aria-hidden="true">Reps left</span>${rirButtons(setIndex, cur)}</div>`;
+}
+// One set's RIR chosen (from the rest overlay OR the inline row); re-tap clears to
+// null. Keep both surfaces for the same set in sync — they share a data-set index.
+async function chooseRir(exId, setIndex, btn) {
+  const was = btn.getAttribute('aria-pressed') === 'true';
+  const val = was ? null : Number(btn.dataset.rir);
+  await setSetRir(exId, setIndex, val);
+  S.active = await getActive();
+  document.querySelectorAll(`.rir-btn[data-set="${setIndex}"]`).forEach(b => {
+    const on = val !== null && Number(b.dataset.rir) === val;
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    b.classList.toggle('selected', on);
+  });
+}
 
 // Parse a weight the iPhone keypad might give with EITHER separator. SA locale
 // keypads often emit a comma, which type=number silently rejected — hence 7.5 → 8.
@@ -100,10 +126,6 @@ async function renderStep(idx, focusSel) {
     ? `${sug.suggestedWeight}kg × ${sug.repGoal}`
     : (sug.repGoal ? `${sug.repGoal} ${repLabel}` : '');
   const isFirstOfSession = exercisesDone() === 0 && setsDone(item.id) === 0;
-
-  // preselect effort if all logged sets share one
-  const rirVals = logged.filter(Boolean).map(s => s.rir).filter(v => v !== null && v !== undefined);
-  const curRir = rirVals.length && rirVals.every(v => v === rirVals[0]) ? rirVals[0] : null;
 
   S.root.innerHTML = `
     <div class="step-top">
@@ -190,23 +212,13 @@ async function renderStep(idx, focusSel) {
             ${showWeight ? `<input class="inp w" type="text" inputmode="decimal" pattern="[0-9.,]*" aria-label="Set ${i + 1} weight in kg" placeholder="kg" value="${wv}" ${done ? 'disabled' : ''} />` : `<div class="inp-spacer" aria-hidden="true">${ex.type === 'bodyweight' ? 'body' : '—'}</div>`}
             <input class="inp r" type="number" inputmode="numeric" aria-label="Set ${i + 1} ${repLabel}" placeholder="${repLabel}" value="${rv}" ${done ? 'disabled' : ''} />
             <button class="set-check" data-set="${i}" aria-label="Log set ${i + 1}" ${done ? 'disabled' : ''}>✓</button>
+            ${ex.type !== 'timed' ? rirGroup(i, (l && l.rir)) : ''}
           </div>`;
       }).join('')}
     </div>
     <p class="set-error" id="set-error" role="alert"></p>
 
     ${complete ? '' : `<button class="btn allset" id="all-set">✓ Log all ${N} sets as shown</button>`}
-
-    ${ex.type !== 'timed' ? `
-    <div class="effort" role="group" aria-labelledby="effort-q">
-      <div class="effort-q" id="effort-q">How hard was that? <span class="effort-opt">optional</span></div>
-      <div class="effort-btns">
-        ${[['3', 'Easy'], ['1', 'Solid'], ['0', 'All-out']].map(([v, l]) => {
-          const on = curRir === Number(v);
-          return `<button type="button" class="effort-btn ${on ? 'selected' : ''}" data-rir="${v}" aria-pressed="${on}">${l}</button>`;
-        }).join('')}
-      </div>
-    </div>` : ''}
 
     <div class="ctrl-row">
       <button class="pill" id="swap-ex">⇄ Swap exercise</button>
@@ -305,17 +317,9 @@ function wireStep(item, ex, N, target, sug) {
   const allBtn = q('#all-set');
   if (allBtn) allBtn.addEventListener('click', () => logAllSets(item, ex, N, target));
 
-  S.root.querySelectorAll('.effort-btn').forEach(btn =>
-    btn.addEventListener('click', async () => {
-      const was = btn.getAttribute('aria-pressed') === 'true';
-      await setEffort(item.id, was ? null : Number(btn.dataset.rir));
-      S.active = await getActive();
-      S.root.querySelectorAll('.effort-btn').forEach(b => {
-        const on = !was && b === btn;
-        b.setAttribute('aria-pressed', on ? 'true' : 'false');
-        b.classList.toggle('selected', on);
-      });
-    }));
+  // inline per-set RIR (visible once a row is done; editable later)
+  S.root.querySelectorAll('.rir-btn').forEach(btn =>
+    btn.addEventListener('click', () => chooseRir(item.id, Number(btn.dataset.set), btn)));
 
   q('#swap-ex').addEventListener('click', () => openInlineSwap());
   const defer = q('#defer-ex');
@@ -383,7 +387,7 @@ async function commitSet(item, ex, i, row, w, r) {
   row.classList.add('done');
   refreshFooter(item);
   announce(`Set ${i + 1} logged.`);
-  startRest(item.rest);   // moves focus into the rest overlay before we disable this row
+  startRest(item.rest, { exId: item.id, setIndex: i });   // rate the set here, then focus lands on Skip
   row.querySelectorAll('input').forEach(el => { el.disabled = true; });
   const btn = row.querySelector('.set-check'); if (btn) btn.disabled = true;
 }
@@ -529,8 +533,13 @@ async function persistSwap(dow, oldId, newId) {
 }
 
 /* ---------- rest timer ---------- */
-function startRest(seconds) {
+function startRest(seconds, ctx = null) {
   if (restTimer) clearInterval(restTimer);
+  // Anchor to a wall-clock end time, not a tick count. iOS freezes setInterval when
+  // the phone locks, so a tick-counter drifts; reading (endAt - now) stays correct
+  // and catches up the instant the app is foregrounded again.
+  let endAt = Date.now() + seconds * 1000;
+  const left = () => Math.max(0, Math.round((endAt - Date.now()) / 1000));
   let remaining = seconds;
   let overlay = document.getElementById('rest-overlay');
   if (!overlay) {
@@ -538,17 +547,32 @@ function startRest(seconds) {
     overlay.id = 'rest-overlay';
     document.body.appendChild(overlay);
   }
+  // the honest "how did that set feel?" moment: rate the set you just logged, here,
+  // while it's fresh. This layer isn't inert, unlike the row behind it.
+  const curRir = ctx && S.active.log[ctx.exId] && S.active.log[ctx.exId][ctx.setIndex]
+    ? S.active.log[ctx.exId][ctx.setIndex].rir : null;
+  const rir = ctx ? `
+      <div class="rest-rir" role="group" aria-labelledby="rest-rir-q">
+        <span class="rir-q" id="rest-rir-q">Reps left in the tank? Optional.</span>
+        <div class="rir-btns">${rirButtons(ctx.setIndex, curRir)}</div>
+      </div>` : '';
   overlay.innerHTML = `
-    <div class="rest-card" role="dialog" aria-modal="true" aria-label="Rest timer, ${remaining} seconds">
+    <div class="rest-card" role="dialog" aria-modal="true" aria-label="Rest timer, ${remaining} seconds"${ctx ? ' aria-describedby="rest-rir-q"' : ''}>
       <div class="rest-label">REST</div>
       <div class="rest-time" role="timer" aria-live="off">${remaining}s</div>
+      ${rir}
       <div class="rest-btns">
-        <button id="rest-add">+15s</button>
+        <button id="rest-sub" aria-label="Subtract 15 seconds">−15s</button>
+        <button id="rest-add" aria-label="Add 15 seconds">+15s</button>
         <button id="rest-skip" class="prime">Skip</button>
       </div>
     </div>`;
-  overlay.querySelector('#rest-add').onclick = () => { remaining += 15; const t = overlay.querySelector('.rest-time'); if (t) t.textContent = `${remaining}s`; };
+  const paintTime = () => { const t = overlay.querySelector('.rest-time'); if (t) t.textContent = `${left()}s`; };
+  overlay.querySelector('#rest-add').onclick = () => { endAt += 15000; paintTime(); };
+  overlay.querySelector('#rest-sub').onclick = () => { endAt = Math.max(Date.now() + 5000, endAt - 15000); paintTime(); };
   overlay.querySelector('#rest-skip').onclick = endRest;
+  if (ctx) overlay.querySelectorAll('.rir-btn').forEach(b =>
+    b.addEventListener('click', () => chooseRir(ctx.exId, ctx.setIndex, b)));
   overlay.classList.add('show');
   // aria-modal="true" was a lie: nothing stopped Tab escaping into the set rows behind.
   // inert the shell (never #sr-status) — the same contract every other overlay here uses.
@@ -557,19 +581,21 @@ function startRest(seconds) {
   document.body.style.overflow = 'hidden';
   overlay.querySelector('#rest-skip').focus();   // move focus into the overlay
   document.addEventListener('keydown', onRestKey);
+  document.addEventListener('visibilitychange', onVisible);
 
   restTimer = setInterval(() => {
-    remaining -= 1;
-    if (remaining <= 0) { endRest(); return; }
-    const t = overlay.querySelector('.rest-time');
-    if (t) t.textContent = `${remaining}s`;
+    if (left() <= 0) { endRest(); return; }
+    paintTime();
   }, 1000);
 
   function onRestKey(e) { if (e.key === 'Escape') endRest(); }
+  // returning from a locked/backgrounded phone: catch up immediately
+  function onVisible() { if (document.visibilityState === 'visible') { if (left() <= 0) endRest(); else paintTime(); } }
 
   function endRest() {
     clearInterval(restTimer); restTimer = null;
     document.removeEventListener('keydown', onRestKey);
+    document.removeEventListener('visibilitychange', onVisible);
     restBg.forEach(el => { el.inert = false; });
     document.body.style.overflow = '';
     if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
