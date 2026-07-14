@@ -11,7 +11,13 @@ import { announce } from './a11y.js';
 export const THEMES = [
   { id: 'indigo', name: 'Indigo Night', desc: 'Cool periwinkle on deep blue-black', bg: '#0A0B14', accent: '#7C8CFF' },
   { id: 'molten', name: 'Molten', desc: 'Hot orange on charcoal', bg: '#0C0D11', accent: '#FF5A2C' },
+  { id: 'crimson', name: 'Crimson Iron', desc: 'Blood red on black, sharp and forged', bg: '#0E0A0B', accent: '#FF5B5B' },
+  { id: 'synthwave', name: 'Synthwave', desc: 'Neon magenta on purple-black, 80s glow', bg: '#120A1F', accent: '#FF4DA6' },
+  { id: 'gold', name: 'Gold Standard', desc: 'Champagne gold on charcoal, refined', bg: '#0F0E0B', accent: '#E8B94A' },
+  { id: 'toxic', name: 'Toxic', desc: 'Electric lime on black, radioactive', bg: '#0A0D0A', accent: '#9EFF3D' },
+  { id: 'blackout', name: 'Blackout', desc: 'Silver on pure OLED black, flat & minimal', bg: '#000000', accent: '#E4E4EA' },
   { id: 'light', name: 'Light Green', desc: 'Fresh green on soft white', bg: '#F3F8F4', accent: '#2E7D46' },
+  { id: 'arctic', name: 'Arctic', desc: 'Deep teal on icy white, soft and airy', bg: '#EEF4F8', accent: '#0E7490' },
 ];
 const DEFAULT_THEME = 'indigo';
 

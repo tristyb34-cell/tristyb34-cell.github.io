@@ -87,6 +87,77 @@
   --shadow-1:0 1px 2px rgba(0,0,0,.08); --shadow-2:0 10px 30px rgba(0,0,0,.12); --hair-top:inset 0 1px 0 rgba(255,255,255,.5);
 }
 
+/* ---- creative themes: colour + shape + depth personality (all AA-verified) ---- */
+
+/* Crimson Iron — blood-red on near-black, sharp industrial corners, hard edges */
+:root[data-theme="crimson"] {
+  --bg:#0E0A0B; --surface:#1A1214; --surface-2:#241719; --line:#3A2529;
+  --text:#F5EDEE; --text-dim:#C9B5B8; --text-faint:#9A8286;
+  --accent:#FF5B5B; --accent-2:#C81E3A; --accent-ink:#1A0405;
+  --accent-hover:#FF7A7A; --accent-press:#E03E3E; --focus:#F5EDEE;
+  --accent-rgb:255,91,91; --accent2-rgb:200,30,58; --bg-rgb:14,10,11; --surface2-rgb:36,23,25;
+  --r-sm:3px; --r-md:5px; --r-lg:9px;                 /* sharp, forged */
+  --shadow-1:0 1px 2px rgba(0,0,0,.5); --hair-top:inset 0 1px 0 rgba(255,255,255,.04);
+}
+
+/* Synthwave — hot magenta + violet on deep purple-black, neon glow, rounded */
+:root[data-theme="synthwave"] {
+  --bg:#120A1F; --surface:#1D1230; --surface-2:#281842; --line:#3D2960;
+  --text:#F3ECFF; --text-dim:#C6B6E6; --text-faint:#9C89C2;
+  --accent:#FF4DA6; --accent-2:#8A5CFF; --accent-ink:#1A0416;
+  --accent-hover:#FF6FB8; --accent-press:#E0348C; --focus:#F3ECFF;
+  --accent-rgb:255,77,166; --accent2-rgb:138,92,255; --bg-rgb:18,10,31; --surface2-rgb:40,24,66;
+  --r-sm:12px; --r-md:18px; --r-lg:24px;
+  --shadow-1:0 0 0 1px rgba(255,77,166,.12); --shadow-2:0 12px 44px rgba(138,92,255,.4); /* neon bleed */
+  --hair-top:inset 0 1px 0 rgba(255,77,166,.18);
+}
+
+/* Gold Standard — champagne gold on warm charcoal, refined, subtle depth */
+:root[data-theme="gold"] {
+  --bg:#0F0E0B; --surface:#1A1813; --surface-2:#24211A; --line:#38342A;
+  --text:#F6F2E9; --text-dim:#CFC7B2; --text-faint:#A39A83;
+  --accent:#E8B94A; --accent-2:#C9962A; --accent-ink:#1A1503;
+  --accent-hover:#F2C95E; --accent-press:#C99A2E; --focus:#F6F2E9;
+  --accent-rgb:232,185,74; --accent2-rgb:201,150,42; --bg-rgb:15,14,11; --surface2-rgb:36,33,26;
+  --shadow-2:0 12px 34px rgba(0,0,0,.55); --hair-top:inset 0 1px 0 rgba(232,185,74,.1);
+}
+
+/* Toxic — electric lime on near-black, sharp hazard edges, radioactive glow */
+:root[data-theme="toxic"] {
+  --bg:#0A0D0A; --surface:#131A13; --surface-2:#1C261C; --line:#2C3A2C;
+  --text:#EEF5EE; --text-dim:#B7C9B7; --text-faint:#879C87;
+  --accent:#9EFF3D; --accent-2:#4ADE6A; --accent-ink:#0A1603;
+  --accent-hover:#B4FF66; --accent-press:#82E028; --focus:#EEF5EE;
+  --accent-rgb:158,255,61; --accent2-rgb:74,222,106; --bg-rgb:10,13,10; --surface2-rgb:28,38,28;
+  --r-sm:4px; --r-md:6px; --r-lg:10px;
+  --shadow-1:0 0 0 1px rgba(158,255,61,.1); --shadow-2:0 8px 32px rgba(158,255,61,.22);
+  --hair-top:inset 0 1px 0 rgba(158,255,61,.15);
+}
+
+/* Blackout — silver-white on pure OLED black, flat + minimal, tight corners */
+:root[data-theme="blackout"] {
+  --bg:#000000; --surface:#0E0E10; --surface-2:#18181B; --line:#2A2A2E;
+  --text:#FAFAFA; --text-dim:#B8B8BE; --text-faint:#8A8A90;
+  --accent:#E4E4EA; --accent-2:#A8A8B2; --accent-ink:#0A0A0A;
+  --accent-hover:#FFFFFF; --accent-press:#C8C8CE; --focus:#FAFAFA;
+  --accent-rgb:228,228,234; --accent2-rgb:168,168,178; --bg-rgb:0,0,0; --surface2-rgb:24,24,27;
+  --r-sm:6px; --r-md:9px; --r-lg:13px;
+  --shadow-1:none; --shadow-2:0 10px 30px rgba(0,0,0,.85); --hair-top:inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+/* Arctic — deep teal on icy white, soft rounded, airy light depth */
+:root[data-theme="arctic"] {
+  --bg:#EEF4F8; --surface:#FFFFFF; --surface-2:#DCE8F0; --line:#6C8697;
+  --text:#0F2029; --text-dim:#365160; --text-faint:#4E6B7A;
+  --accent:#0E7490; --accent-2:#0A5E75; --accent-ink:#FFFFFF;
+  --accent-hover:#0C6580; --accent-press:#0A5266; --focus:#0B3A47;
+  --accent-rgb:14,116,144; --accent2-rgb:10,94,117; --bg-rgb:238,244,248; --surface2-rgb:220,232,240;
+  --good:#0B6B4F; --warn:#8A5200;
+  --cue-label:#0A5865; --cue-warn:#8A5200; --cue-cool:#0C6076;
+  --r-sm:14px; --r-md:20px; --r-lg:28px;              /* soft, pillowy */
+  --shadow-1:0 1px 3px rgba(20,60,80,.1); --shadow-2:0 12px 32px rgba(20,60,80,.14); --hair-top:inset 0 1px 0 rgba(255,255,255,.7);
+}
+
 /* Blackletter display face — used ONLY for the daily commandment hero. Bundled
    for offline. Low readability at length, so it never touches body text. */
 @font-face {
