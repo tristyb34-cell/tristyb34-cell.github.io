@@ -45,6 +45,9 @@
      no bundle. Applied via .voice / the coach-line classes. */
   --voice: Georgia, 'Times New Roman', 'Iowan Old Style', serif;
 
+  /* the theme's display face — commandment hero + DAX wordmark. Themes override it. */
+  --display-font: 'Pirata One', Georgia, serif;
+
   /* shape & motion */
   --r-sm: 10px;
   --r-md: 16px;
@@ -87,7 +90,37 @@
   --shadow-1:0 1px 2px rgba(0,0,0,.08); --shadow-2:0 10px 30px rgba(0,0,0,.12); --hair-top:inset 0 1px 0 rgba(255,255,255,.5);
 }
 
-/* ---- creative themes: colour + shape + depth personality (all AA-verified) ---- */
+/* ---- creative themes: colour + shape + depth + FONT + texture personality ---- */
+
+/* Each theme's display face (commandment hero + DAX wordmark change character) */
+:root[data-theme="crimson"]   { --display-font: 'Black Ops One', Impact, sans-serif; }
+:root[data-theme="synthwave"] { --display-font: 'Orbitron', 'Trebuchet MS', sans-serif; }
+:root[data-theme="gold"]      { --display-font: 'Cinzel', Georgia, serif; }
+:root[data-theme="toxic"]     { --display-font: 'Black Ops One', Impact, sans-serif; }
+:root[data-theme="blackout"]  { --display-font: -apple-system, 'Helvetica Neue', Arial, sans-serif; }
+:root[data-theme="arctic"]    { --display-font: 'Comfortaa', 'Trebuchet MS', sans-serif; }
+/* blackout wants its wordmark/hero razor-clean and heavy, not blackletter */
+:root[data-theme="blackout"] .brand-mark, :root[data-theme="blackout"] .cmd-text { font-weight: 800; letter-spacing: -.5px; }
+
+/* Synthwave CRT: faint horizontal scanlines + a slow rolling sweep over the whole
+   app. Purely decorative — pointer-events:none, not in the a11y tree, motion off
+   under prefers-reduced-motion. Never intercepts a tap. */
+:root[data-theme="synthwave"] #app::after {
+  content: ''; position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,.16) 0 1px, transparent 1px 3px);
+  mix-blend-mode: multiply; opacity: .5;
+}
+:root[data-theme="synthwave"] #app::before {
+  content: ''; position: fixed; left: 0; right: 0; height: 40%; z-index: 9998; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,77,166,.06), transparent);
+  animation: crt-roll 7s linear infinite;
+}
+@keyframes crt-roll { 0% { top: -40%; } 100% { top: 100%; } }
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme="synthwave"] #app::before { animation: none; display: none; }
+}
+
+
 
 /* Crimson Iron — blood-red on near-black, sharp industrial corners, hard edges */
 :root[data-theme="crimson"] {
@@ -158,13 +191,14 @@
   --shadow-1:0 1px 3px rgba(20,60,80,.1); --shadow-2:0 12px 32px rgba(20,60,80,.14); --hair-top:inset 0 1px 0 rgba(255,255,255,.7);
 }
 
-/* Blackletter display face — used ONLY for the daily commandment hero. Bundled
-   for offline. Low readability at length, so it never touches body text. */
-@font-face {
-  font-family: 'Pirata One';
-  src: url('/assets/fonts/pirata-one.woff2') format('woff2');
-  font-weight: 400; font-style: normal; font-display: swap;
-}
+/* Display faces — used ONLY on the commandment hero + the DAX wordmark (short,
+   large text) so per-theme character never hurts body readability. Bundled offline.
+   Each theme picks one via --display-font. */
+@font-face { font-family: 'Pirata One';   src: url('/assets/fonts/pirata-one.woff2') format('woff2');   font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Orbitron';      src: url('/assets/fonts/orbitron.woff2') format('woff2');      font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Black Ops One';  src: url('/assets/fonts/black-ops-one.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Cinzel';         src: url('/assets/fonts/cinzel.woff2') format('woff2');        font-weight: 600; font-display: swap; }
+@font-face { font-family: 'Comfortaa';      src: url('/assets/fonts/comfortaa.woff2') format('woff2');     font-weight: 700; font-display: swap; }
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
@@ -172,8 +206,8 @@
 .cmd-hero { padding: 20px 4px 22px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
 .cmd-eyebrow { font-size: 12px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--accent); font-weight: 800; margin-bottom: 10px; }
 .cmd-text {
-  font-family: 'Pirata One', Georgia, 'Times New Roman', serif;
-  font-size: 34px; line-height: 1.12; color: var(--text); font-weight: 400;
+  font-family: var(--display-font);
+  font-size: 34px; line-height: 1.14; color: var(--text); font-weight: 400;
   letter-spacing: .5px;
 }
 
@@ -210,6 +244,7 @@ body {
 }
 .brand { display: flex; align-items: baseline; gap: 10px; }
 .brand-mark {
+  font-family: var(--display-font);
   font-weight: 900;
   font-size: 26px;
   letter-spacing: 1px;
