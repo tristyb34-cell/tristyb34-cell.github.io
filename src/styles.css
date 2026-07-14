@@ -1210,7 +1210,8 @@ h1.screen-title { font-size: 31px; font-weight: 850; line-height: 1.04; letter-s
 .reader-card { max-width: 640px; margin: 0 auto; min-height: 100%; padding: 0 18px calc(var(--safe-bot) + 40px); }
 .reader-head {
   position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between;
-  padding: 16px 0 12px; background: linear-gradient(180deg, var(--bg) 70%, transparent);
+  /* this overlay covers the app-header, so it must clear the notch itself */
+  padding: calc(var(--safe-top) + 16px) 0 12px; background: linear-gradient(180deg, var(--bg) 70%, transparent);
 }
 .reader-close {
   background: var(--surface-2); color: var(--text); border: 1px solid var(--line);
