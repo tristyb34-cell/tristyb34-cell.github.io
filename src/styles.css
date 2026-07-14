@@ -96,6 +96,20 @@
 :root[data-theme="crimson"]   { --display-font: 'Black Ops One', Impact, sans-serif; }
 :root[data-theme="synthwave"] { --display-font: 'Orbitron', 'Trebuchet MS', sans-serif; }
 :root[data-theme="gold"]      { --display-font: 'Cinzel', Georgia, serif; }
+/* Gold: a slow champagne gleam sweeping across the commandment hero — solid gold
+   base (10.5:1 on the bg) with a bright band that drifts back and forth. Purely
+   decorative; static under reduced-motion. */
+:root[data-theme="gold"] .cmd-text {
+  background: linear-gradient(100deg, #E8B94A 0%, #E8B94A 40%, #FFF6DC 50%, #E8B94A 60%, #E8B94A 100%);
+  background-size: 260% 100%;
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+  animation: gold-shimmer 6.5s ease-in-out infinite;
+}
+@keyframes gold-shimmer { 0%, 100% { background-position: 120% 0; } 50% { background-position: -20% 0; } }
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme="gold"] .cmd-text { animation: none; background-position: 50% 0; }
+}
 :root[data-theme="toxic"]     { --display-font: 'Black Ops One', Impact, sans-serif; }
 :root[data-theme="blackout"]  { --display-font: -apple-system, 'Helvetica Neue', Arial, sans-serif; }
 :root[data-theme="arctic"]    { --display-font: 'Comfortaa', 'Trebuchet MS', sans-serif; }
