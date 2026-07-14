@@ -40,6 +40,11 @@
   --good:      #35D6A0;
   --warn:      #FFC24B;
 
+  /* the coach's VOICE — a serif italic, distinct from the sans UI, so coaching
+     reads like someone talking to you rather than interface chrome. System serif,
+     no bundle. Applied via .voice / the coach-line classes. */
+  --voice: Georgia, 'Times New Roman', 'Iowan Old Style', serif;
+
   /* shape & motion */
   --r-sm: 10px;
   --r-md: 16px;
@@ -305,8 +310,8 @@ h1.screen-title { font-size: 31px; font-weight: 850; line-height: 1.04; letter-s
 
 .coach { background: var(--surface-2); border-radius: var(--r-md); padding: 14px 16px; border-left: 3px solid var(--accent); }
 .coach-head { font-weight: 800; font-size: 16px; color: var(--text); }
-.coach-detail { font-size: 13.5px; color: var(--text-dim); margin-top: 5px; line-height: 1.45; }
-.coach-last { font-size: 12.5px; color: var(--text-faint); margin-top: 8px; }
+.coach-detail { font-family: var(--voice); font-style: italic; font-size: 15px; color: var(--text-dim); margin-top: 6px; line-height: 1.5; }
+.coach-last { font-family: var(--voice); font-style: italic; font-size: 13.5px; color: var(--text-faint); margin-top: 8px; }
 
 /* set rows */
 .set-rows { display: flex; flex-direction: column; gap: 8px; }
@@ -387,7 +392,7 @@ h1.screen-title { font-size: 31px; font-weight: 850; line-height: 1.04; letter-s
 /* history stats */
 .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 6px 0 8px; }
 .stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 12px 6px; text-align: center; }
-.stat-num { font-size: 22px; font-weight: 850; }
+.stat-num { font-size: 26px; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
 .stat-lbl { font-size: 11px; color: var(--text-faint); text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
 .hist-card { padding: 14px; }
 .hist-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
@@ -559,7 +564,7 @@ h1.screen-title { font-size: 31px; font-weight: 850; line-height: 1.04; letter-s
   border-radius: var(--r-md); padding: 14px 16px; margin-bottom: 12px;
 }
 .coach-eyebrow { font-size: 10px; letter-spacing: 1.5px; color: var(--accent); font-weight: 800; margin-bottom: 6px; }
-.coach-msg { font-size: 15.5px; line-height: 1.5; color: var(--text); font-weight: 600; }
+.coach-msg { font-family: var(--voice); font-style: italic; font-size: 17px; line-height: 1.5; color: var(--text); font-weight: 500; }
 
 .nudge {
   display: flex; gap: 10px; align-items: flex-start;
@@ -839,13 +844,13 @@ h1.screen-title { font-size: 31px; font-weight: 850; line-height: 1.04; letter-s
 /* ---------- consistency card (the keystone metric) ---------- */
 .consistency-card { border-color: rgba(var(--accent-rgb), .35); }
 .cons-top { display: flex; align-items: center; gap: 16px; margin-top: 6px; }
-.cons-pct { font-size: 46px; font-weight: 850; line-height: 1; font-variant-numeric: tabular-nums; }
-.cons-unit { font-size: 20px; font-weight: 800; }
+.cons-pct { font-size: 58px; font-weight: 900; line-height: .95; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.cons-unit { font-size: 22px; font-weight: 800; }
 .cons-meta { flex: 1; min-width: 0; }
 .cons-label { color: var(--text-dim); font-size: 12.5px; margin-bottom: 8px; }
 .cons-pills { display: flex; gap: 8px; flex-wrap: wrap; }
-.cons-goal { margin: 14px 0 0; font-weight: 750; font-size: 14px; color: var(--text); }
-.cons-coach { margin: 10px 0 0; color: var(--text-dim); font-size: 13.5px; line-height: 1.5; }
+.cons-goal { font-family: var(--voice); font-style: italic; margin: 14px 0 0; font-weight: 600; font-size: 15.5px; color: var(--text); }
+.cons-coach { font-family: var(--voice); font-style: italic; margin: 10px 0 0; color: var(--text-dim); font-size: 14.5px; line-height: 1.55; }
 .cons-bigtitle { font-size: 26px; font-weight: 850; margin: 2px 0 8px; }
 
 /* ============================================================
@@ -920,7 +925,7 @@ h1.screen-title { font-size: 31px; font-weight: 850; line-height: 1.04; letter-s
 .prog-held .prog-badge { color: var(--text-faint); }
 /* light theme --good (#0F8A6B) is only 4.31:1 on the white card — darken the Up badge */
 :root[data-theme="light"] .prog-up .prog-badge { color: #0B6B4F; }
-.prog-sub { font-size: 13.5px; line-height: 1.55; color: var(--text-dim); }
+.prog-sub { font-family: var(--voice); font-style: italic; font-size: 14.5px; line-height: 1.6; color: var(--text-dim); }
 
 /* Lesson comprehension check — native radios styled as chips. Right/wrong carried
    by ✓/✗ glyph + word + role=status announcement, never colour alone. */

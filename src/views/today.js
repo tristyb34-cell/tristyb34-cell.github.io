@@ -248,7 +248,9 @@ async function paintToday(root) {
   const moreSection = secondary.trim()
     ? `<details class="more-section"><summary>More tools & prompts</summary>${secondary}</details>`
     : '';
-  root.innerHTML = cmdHero + coachHtml + consistencyHtml + phaseHtml + phaseSuggestHtml + reentryHtml + adaptiveHtml + journalHtml + nudgeHtml + mid + exploreHtml + remindersCard(rem) + moreSection;
+  // Order (his pick, "hype then train"): hero → coach's voice → scoreboard → THE
+  // WORKOUT → contextual coaching → explore → reminders → tucked prompts.
+  root.innerHTML = cmdHero + coachHtml + consistencyHtml + mid + phaseHtml + phaseSuggestHtml + reentryHtml + adaptiveHtml + journalHtml + nudgeHtml + exploreHtml + remindersCard(rem) + moreSection;
 
   // wiring
   const startBtn = root.querySelector('#start');
