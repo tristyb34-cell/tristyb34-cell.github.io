@@ -34,6 +34,12 @@ export const CUES = {
     wrong: 'If your lower back arches off the pad and your chest takes over, the weight is too heavy. Ribs down, abs braced, press straight up rather than out in front.',
     range: 'Bottom of the rep at ear height, not lower. All the way up, minus the lockout.',
   },
+  'Cable_Lateral_Raise': {
+    cue: 'Side-on to a low pulley, free hand braced on the machine. Lead with the elbow and raise to shoulder height, pinky a touch high.',
+    feel: 'The outer cap of the shoulder, under constant tension the whole way, including the stretch at the bottom. The bit dumbbells miss.',
+    wrong: 'If you are yanking with your whole body or shrugging your traps, go lighter. The cable rewards control, not momentum. One arm at a time, no swinging.',
+    range: 'Let the handle pull your arm across your body at the bottom for a full stretch, then raise to shoulder height. Three seconds down, fight the cable.',
+  },
   'Side_Lateral_Raise': {
     cue: 'Pour two jugs of water out to your sides, pinkies tilted up. Lead with your elbows. If your neck is working, you are swinging.',
     feel: 'The outer cap of the shoulder, the one that builds width. It burns early and hard with light weight.',

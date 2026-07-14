@@ -29,6 +29,21 @@ function appendGrip(plan) {
   return plan;
 }
 
+// v6: bookend side-delt volume on Tue/Sat — dumbbell laterals OPEN the session,
+// a new standing one-arm cable lateral CLOSES it. Side delts are his priority and
+// recover fast, so this is the cheapest place to add quality volume.
+function bookendDelts(plan) {
+  for (const day of plan) {
+    if (day.dow !== 'Tue' && day.dow !== 'Sat') continue;
+    const idx = day.items.findIndex(i => i.id === 'Side_Lateral_Raise');
+    if (idx > 0) day.items.unshift(day.items.splice(idx, 1)[0]); // make DB laterals the opener
+    if (!day.items.some(i => i.id === 'Cable_Lateral_Raise')) {
+      day.items.push({ id: 'Cable_Lateral_Raise', sets: 3, reps: '15-20', rest: 45 });
+    }
+  }
+  return plan;
+}
+
 export async function getPlan() {
   let plan = await db.get('plan', null);
   if (!plan) {
@@ -44,9 +59,11 @@ export async function getPlan() {
   if (!(await db.get('planCustomised', false))) {
     // untouched plan → adopt the new default wholesale
     plan = clone(DEFAULT_PLAN);
-  } else if (stored < 5) {
-    // customised plan → keep every edit, just append the grip work
-    plan = appendGrip(clone(plan));
+  } else {
+    // customised plan → keep every edit, apply each version's change cumulatively
+    plan = clone(plan);
+    if (stored < 5) plan = appendGrip(plan);
+    if (stored < 6) plan = bookendDelts(plan);
   }
   await db.set('plan', plan);
   await db.set('planVersion', PLAN_VERSION);
