@@ -1,6 +1,6 @@
 /* DAX service worker — offline app shell.
    Bump CACHE when you ship changes so clients pull fresh files. */
-const CACHE = 'dax-v0.51.0';
+const CACHE = 'dax-v0.52.0';
 
 const ASSETS = [
   '/',
@@ -54,6 +54,7 @@ const ASSETS = [
   '/assets/fonts/black-ops-one.woff2',
   '/assets/fonts/orbitron.woff2',
   '/assets/icons/icon-192.png',
+  '/assets/icons/favicon-64.png',
   '/assets/icons/icon-512.png',
   '/assets/icons/icon-180.png',
 ];
