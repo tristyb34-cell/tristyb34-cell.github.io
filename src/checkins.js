@@ -51,3 +51,28 @@ export async function saveCheckin(data) {
 export async function skipCheckin() {
   return upsert({ date: todayKey(), skipped: true });
 }
+
+/* Food catch-up: the check-in only fires on training days, so rest-day food never
+   gets logged. When it opens, ask about recent days that haven't been answered yet
+   (up to 3 back), plus today. Today is never marked "answered" (dinner comes after
+   the workout), so it reappears next check-in — pre-filled — to catch the dinner. */
+const utcKey = (ms) => new Date(ms).toISOString().slice(0, 10);
+export async function foodCatchupDays(nowMs = Date.now()) {
+  const answered = new Set((await db.get('foodAnswered', [])) || []);
+  const sessions = (await db.get('sessions', [])) || [];
+  const first = sessions.length ? sessions[0].date : todayKey();
+  const today = utcKey(nowMs);
+  const days = [];
+  for (let i = 3; i >= 1; i--) {
+    const dk = utcKey(nowMs - i * 86400000);
+    if (dk < first || answered.has(dk)) continue;
+    days.push({ date: dk, isToday: false });
+  }
+  days.push({ date: today, isToday: true });
+  return days;
+}
+export async function markFoodAnswered(dates) {
+  const answered = new Set((await db.get('foodAnswered', [])) || []);
+  dates.forEach(d => answered.add(d));
+  await db.set('foodAnswered', [...answered]);
+}

@@ -14,7 +14,8 @@ import { swapCandidates, getGym, hasEquipment } from './equipment.js';
 import { getPlan, savePlan } from './plan.js';
 import { announce } from './a11y.js';
 import { formBlock } from './cues.js';
-import { getCheckin, saveCheckin, skipCheckin } from './checkins.js';
+import { getCheckin, saveCheckin, skipCheckin, foodCatchupDays, markFoodAnswered } from './checkins.js';
+import { mealsForDate, setMeal, getDayLog } from './nutrition.js';
 import { dailyArticle } from './knowledge.js';
 
 const stretchList = (items) => `<div class="stretch-list">${items.map(s =>
@@ -78,10 +79,20 @@ function clearTimers() {
 // then hand off to the runner. Continue / quick / browse-a-day skip straight in.
 export async function startWorkout(root, day) {
   if (await getCheckin()) return renderSession(root, day); // already answered/skipped today
-  renderCheckin(root, day);
+  await renderCheckin(root, day);
 }
 
-function renderCheckin(root, day) {
+const CI_DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const CI_DOW_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const CI_TRAIN = new Set(['Tue', 'Thu', 'Fri', 'Sat']);
+function ciDayLabel(dateKey, isToday) {
+  const d = new Date(dateKey + 'T00:00:00Z');
+  if (isToday) return 'Today';
+  const abbr = CI_DOW[d.getUTCDay()];
+  return `${CI_DOW_FULL[d.getUTCDay()]}${CI_TRAIN.has(abbr) ? '' : ' · rest day'}`;
+}
+
+async function renderCheckin(root, day) {
   clearTimers();
   const chip = (single, val, label, aria) =>
     `<button type="button" class="rir-btn" data-val="${val}" aria-pressed="false"${aria ? ` aria-label="${aria}"` : ''}>${label}</button>`;
@@ -90,6 +101,35 @@ function renderCheckin(root, day) {
       <span class="ci-q" id="${id}-lbl">${q}</span>
       <div class="rir-btns" data-single="${id}">${chips}</div>
     </div>`;
+
+  // Food catch-up: today + any recent days not yet answered. Pre-fill from the log.
+  const foodDays = await foodCatchupDays();
+  const dayLogs = {};
+  for (const fd of foodDays) dayLogs[fd.date] = await getDayLog(fd.date);
+  const stateBtn = (date, mealId, val, label, cur) => {
+    const on = cur === val;
+    return `<button type="button" class="rir-btn ${on ? 'selected' : ''}" data-val="${val}" aria-pressed="${on}" aria-label="${label} ${date}">${label}</button>`;
+  };
+  const foodSection = `
+    <h2 class="ci-food-title" id="ci-food-h">Food log</h2>
+    <p class="ci-food-sub">Tap what you ate. Days you missed are here so nothing’s lost.</p>
+    ${foodDays.map(fd => `
+      <div class="ci-fday">
+        <div class="ci-fday-label">${ciDayLabel(fd.date, fd.isToday)}</div>
+        ${mealsForDate(fd.date).map(meal => {
+          const logged = dayLogs[fd.date][meal.id];
+          const cur = logged === 'swap' ? 'swap' : logged ? 'ate' : null;
+          return `
+            <div class="ci-meal" role="group" aria-label="${meal.label}, ${ciDayLabel(fd.date, fd.isToday)}">
+              <span class="ci-meal-nm"><span aria-hidden="true">${meal.emoji}</span> ${meal.label}</span>
+              <div class="rir-btns ci-meal-btns" data-single="food::${fd.date}::${meal.id}">
+                ${stateBtn(ciDayLabel(fd.date, fd.isToday), meal.id, 'ate', 'Ate', cur)}
+                ${stateBtn(ciDayLabel(fd.date, fd.isToday), meal.id, 'swap', 'Swap', cur)}
+                ${stateBtn(ciDayLabel(fd.date, fd.isToday), meal.id, 'skip', 'Skip', cur)}
+              </div>
+            </div>`;
+        }).join('')}
+      </div>`).join('')}`;
 
   root.innerHTML = `
     <div class="step-top">
@@ -112,7 +152,8 @@ function renderCheckin(root, day) {
     ${group('sleepQ', 'Sleep quality', ['Poor', 'OK', 'Good'].map(q => chip('sleepQ', q.toLowerCase(), q)).join(''))}
     ${group('smoked', 'Smoked within 90 min of bed?', chip('smoked', 'yes', 'Yes') + chip('smoked', 'no', 'No'))}
     ${group('energy', 'Energy today', ['Low', 'Med', 'High'].map(e => chip('energy', e.toLowerCase(), e)).join(''))}
-    ${group('food', 'Eaten yet today?', chip('food', 'yes', 'Yes') + chip('food', 'not-yet', 'Not yet'))}
+
+    ${foodSection}
 
     <button class="btn" id="ci-start">⚡ Start workout</button>
     <div style="height:10px;"></div>
@@ -133,13 +174,24 @@ function renderCheckin(root, day) {
 
   root.querySelector('#ci-exit').addEventListener('click', () =>
     import('./views/today.js').then(m => m.mountToday(root)));
+  async function commitFood() {
+    for (const grp of root.querySelectorAll('[data-single^="food::"]')) {
+      const [, date, mealId] = grp.dataset.single.split('::');
+      const pressed = grp.querySelector('.rir-btn[aria-pressed="true"]');
+      if (pressed) await setMeal(date, mealId, pressed.dataset.val); // only write what he answered
+    }
+    // mark the complete (non-today) catch-up days done so they stop reappearing;
+    // today stays open so dinner gets caught at the next check-in
+    await markFoodAnswered(foodDays.filter(fd => !fd.isToday).map(fd => fd.date));
+  }
   root.querySelector('#ci-start').addEventListener('click', async () => {
     const w = root.querySelector('#ci-weight').value.replace(',', '.').trim();
     await saveCheckin({
       weight: w === '' ? null : num(w),
       sleepH: pick('sleepH'), sleepQ: pick('sleepQ'),
-      smoked: pick('smoked'), energy: pick('energy'), food: pick('food'),
+      smoked: pick('smoked'), energy: pick('energy'),
     });
+    await commitFood();
     announce(`Check-in saved. Starting ${day.title}.`);
     go();
   });

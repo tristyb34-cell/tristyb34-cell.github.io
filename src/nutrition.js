@@ -120,6 +120,29 @@ export async function getDayLog(date = todayKey()) {
   return logs[date] || {};
 }
 
+// The meals that apply on a given date (weekend drops the mid-morning eggs), with
+// short labels + emoji for the check-in. UTC weekday to match the UTC date keys.
+const MEAL_SHORT = { smoothie: 'Shake', eggs: 'Eggs', lunch: 'Lunch', snack: 'Snack', dinner: 'Dinner' };
+const MEAL_EMOJI = { smoothie: '🥤', eggs: '🥚', lunch: '🥪', snack: '🍌', dinner: '🍽️' };
+export function mealsForDate(date) {
+  const d = new Date(date + 'T00:00:00Z');
+  const weekend = d.getUTCDay() === 0 || d.getUTCDay() === 6;
+  const ids = weekend ? ['smoothie', 'lunch', 'snack', 'dinner'] : ['smoothie', 'eggs', 'lunch', 'snack', 'dinner'];
+  return ids.map(id => ({ id, label: MEAL_SHORT[id] || id, emoji: MEAL_EMOJI[id] || '' }));
+}
+
+// Set one meal's state for a specific date (the check-in logs past days too, not
+// just today). ate → true, swap → 'swap' (still counts the slot), skip → removed.
+export async function setMeal(date, mealId, state) {
+  const logs = await allLogs();
+  const day = logs[date] || {};
+  if (state === 'skip' || state == null) delete day[mealId];
+  else day[mealId] = state === 'swap' ? 'swap' : true;
+  logs[date] = day;
+  await db.set('foodlog', logs);
+  return day;
+}
+
 export async function toggleMeal(mealId, sizeIfDinner = 'med') {
   const date = todayKey();
   const logs = await allLogs();
