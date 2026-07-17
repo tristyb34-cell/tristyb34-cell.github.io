@@ -1,6 +1,6 @@
 /* DAX service worker — offline app shell.
    Bump CACHE when you ship changes so clients pull fresh files. */
-const CACHE = 'dax-v0.53.0';
+const CACHE = 'dax-v0.54.0';
 
 const ASSETS = [
   '/',
@@ -59,24 +59,45 @@ const ASSETS = [
   '/assets/icons/icon-180.png',
 ];
 
+// Exercise images live in their OWN cache, deliberately NOT versioned: the image
+// files never change, so a version bump must not evict them. Bumping CACHE used to
+// wipe all 175 and force a re-download, which is why the gym showed no pictures.
+const IMG_CACHE = 'dax-images-v1';
+
+const isExerciseImg = (url) => url.includes('/assets/exercises/');
+
+// Cache the exercise images WITHOUT addAll: addAll is atomic, so a single failed
+// image (one CDN hiccup across 175 parallel requests) threw the whole batch away
+// and left nothing cached. Chunked + allSettled means one failure costs one image.
+async function precacheImages() {
+  try {
+    const c = await caches.open(IMG_CACHE);
+    const idx = await fetch('/assets/exercises/index.json', { cache: 'no-cache' }).then(r => r.json());
+    const missing = [];
+    for (const url of idx) if (!(await c.match(url))) missing.push(url);
+    const CHUNK = 8; // gentle on the CDN, and survivable if the connection drops
+    for (let i = 0; i < missing.length; i += CHUNK) {
+      await Promise.allSettled(missing.slice(i, i + CHUNK).map(u => c.add(u)));
+    }
+  } catch (_) { /* whatever's missing caches lazily on first view */ }
+}
+
 self.addEventListener('install', (e) => {
   e.waitUntil((async () => {
     const c = await caches.open(CACHE);
     await c.addAll(ASSETS);
-    // precache every exercise image so workouts work offline in the gym
-    try {
-      const idx = await fetch('/assets/exercises/index.json').then(r => r.json());
-      await c.addAll(idx);
-    } catch (e) { /* images will cache lazily on first view */ }
+    await precacheImages(); // never throws, so a bad image can't fail the install
     await self.skipWaiting();
   })());
 });
 
 self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
-      .then(() => self.clients.claim())
-  );
+  e.waitUntil((async () => {
+    const keys = await caches.keys();
+    // only sweep old APP-shell caches; the image cache is intentionally kept
+    await Promise.all(keys.filter(k => k !== CACHE && k !== IMG_CACHE).map(k => caches.delete(k)));
+    await self.clients.claim();
+  })());
 });
 
 // web push: show the notification the cron sent (works when the app is closed)
@@ -112,11 +133,21 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(fetch(req).catch(() => caches.match('/index.html')));
     return;
   }
-  e.respondWith(
-    caches.match(req).then(cached => cached || fetch(req).then(res => {
-      const copy = res.clone();
-      caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {});
+  e.respondWith((async () => {
+    // caches.match searches every cache, so this finds images in IMG_CACHE too
+    const cached = await caches.match(req);
+    if (cached) return cached;
+    try {
+      const res = await fetch(req);
+      if (res && res.ok) {
+        // images go to the durable cache so the next version bump can't evict them
+        const target = isExerciseImg(req.url) ? IMG_CACHE : CACHE;
+        const copy = res.clone();
+        caches.open(target).then(c => c.put(req, copy)).catch(() => {});
+      }
       return res;
-    }).catch(() => cached))
-  );
+    } catch (_) {
+      return Response.error(); // was `return cached` — always undefined here, which threw
+    }
+  })());
 });

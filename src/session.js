@@ -232,6 +232,11 @@ function itemComplete(i) {
 function exercisesDone() {
   return S.day.items.reduce((n, _, i) => n + (itemComplete(i) ? 1 : 0), 0);
 }
+// has a single set been logged anywhere in this session yet?
+function anySetLogged() {
+  return Object.values(S.active.log || {})
+    .some(arr => (arr || []).some(s => s && (s.reps || s.weight)));
+}
 
 /* ---------- swap spotter lifts for a solo-safe move, in place ---------- */
 function applySafety(idx) {
@@ -274,7 +279,10 @@ async function renderStep(idx, focusSel) {
   const tryStr = showWeight && sug.suggestedWeight != null
     ? `${sug.suggestedWeight}kg × ${sug.repGoal}`
     : (sug.repGoal ? `${sug.repGoal} ${repLabel}` : '');
-  const isFirstOfSession = exercisesDone() === 0 && setsDone(item.id) === 0;
+  // The warm-up belongs to the START of the session, not to an exercise. Scoping it
+  // per-exercise meant skipping past exercise 1 dragged the warm-up along to the next
+  // one. Once ANY set is logged the workout has begun, so it's gone for good.
+  const isFirstOfSession = idx === 0 && !anySetLogged();
 
   S.root.innerHTML = `
     <div class="step-top">
