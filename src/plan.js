@@ -44,6 +44,32 @@ function bookendDelts(plan) {
   return plan;
 }
 
+// v8: bookendDelts (v6) made side lateral raises the Push opener, which pre-exhausted
+// the delts and bottlenecked every press after (he stopped mid-session over it). Move
+// them off the opener, down to 3 sets, before triceps; cable laterals stay the finisher.
+// Also add a Romanian deadlift to Legs, the hip hinge his leg day was missing. Surgical,
+// so a customised plan gets it too.
+function reorderPushAddHinge(plan) {
+  const tue = plan.find(d => d.dow === 'Tue');
+  if (tue) {
+    tue.items = [
+      { id: 'Incline_Dumbbell_Press', sets: 4, reps: '8-12', rest: 90 },
+      { id: 'Cable_Chest_Press', sets: 3, reps: '8-12', rest: 75 },
+      { id: 'Dumbbell_Shoulder_Press', sets: 3, reps: '8-10', rest: 90 },
+      { id: 'Side_Lateral_Raise', sets: 3, reps: '12-20', rest: 60 },
+      { id: 'Cable_Rope_Overhead_Triceps_Extension', sets: 3, reps: '10-15', rest: 60 },
+      { id: 'Triceps_Pushdown', sets: 3, reps: '10-15', rest: 60 },
+      { id: 'Cable_Lateral_Raise', sets: 3, reps: '15-20', rest: 45 },
+    ];
+  }
+  const fri = plan.find(d => d.dow === 'Fri');
+  if (fri && !fri.items.some(i => i.id === 'Romanian_Deadlift')) {
+    const i = fri.items.findIndex(x => x.id === 'Leg_Press');
+    fri.items.splice(i >= 0 ? i + 1 : 1, 0, { id: 'Romanian_Deadlift', sets: 3, reps: '8-12', rest: 90 });
+  }
+  return plan;
+}
+
 export async function getPlan() {
   let plan = await db.get('plan', null);
   if (!plan) {
@@ -64,6 +90,7 @@ export async function getPlan() {
     plan = clone(plan);
     if (stored < 5) plan = appendGrip(plan);
     if (stored < 6) plan = bookendDelts(plan);
+    if (stored < 8) plan = reorderPushAddHinge(plan);
   }
   await db.set('plan', plan);
   await db.set('planVersion', PLAN_VERSION);
