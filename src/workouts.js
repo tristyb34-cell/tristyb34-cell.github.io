@@ -33,24 +33,37 @@ async function upsertSession(session) {
 }
 
 // Build a session record from the in-progress workout (shared by every save path).
+// An exercise is saved if it has real sets OR a note: a note on a skipped exercise
+// ("shoulder was off, didn't press") is deliberately kept, it's often the most useful.
 function sessionFromActive(a, finished) {
-  const entries = Object.entries(a.log).map(([exId, sets]) => ({
-    exId,
-    sets: (sets || []).filter(s => s && (s.reps || s.weight)),
-  })).filter(e => e.sets.length);
+  const notes = a.notes || {};
+  const ids = new Set([
+    ...Object.keys(a.log),
+    ...Object.keys(notes).filter(id => (notes[id] || '').trim()),
+  ]);
+  const entries = [...ids].map((exId) => {
+    const sets = (a.log[exId] || []).filter(s => s && (s.reps || s.weight));
+    const note = (notes[exId] || '').trim();
+    const e = { exId, sets };
+    if (note) e.note = note;
+    return e;
+  }).filter(e => e.sets.length || e.note);
   const s = { date: a.date, dow: a.dow, title: a.title, startedAt: a.startedAt, entries };
   if (a.planned != null) s.planned = a.planned;
   if (finished) s.finishedAt = Date.now();
   return s;
 }
 
-// "Showed up" = logged real work for at least half the planned exercises.
+// "Showed up" = logged real WORK for at least half the planned exercises. Note-only
+// entries don't count here: jotting a note is not the same as training, so a
+// notes-but-no-sets day never inflates his attendance or streak.
 const MEANINGFUL_MIN = 2;
 function isMeaningful(session) {
+  const worked = (session.entries || []).filter(e => e.sets && e.sets.length).length;
   const need = session.planned
     ? Math.max(MEANINGFUL_MIN, Math.ceil(session.planned / 2))
     : MEANINGFUL_MIN;
-  return session.entries.length >= need;
+  return worked >= need;
 }
 
 /* ---------- the in-progress workout (survives refresh) ---------- */
@@ -63,10 +76,37 @@ export async function startActive(workout) {
   if (existing) await syncActiveToSessions(); // a new day must never overwrite an unsaved prior one
   const active = {
     date: todayKey(), dow: workout.dow, title: workout.title,
-    startedAt: Date.now(), planned: (workout.items || []).length, log: {},
+    startedAt: Date.now(), planned: (workout.items || []).length, log: {}, notes: {},
   };
   await db.set('active', active);
   return active;
+}
+
+// An optional per-exercise note for today's session. Empty text clears it. Persists
+// into the saved session (folded in by sessionFromActive) so it shows in History and
+// can be surfaced next time he does the exercise.
+export async function setNote(exId, text) {
+  const a = await getActive();
+  if (!a) return null;
+  a.notes = a.notes || {};
+  const t = (text || '').trim();
+  if (t) a.notes[exId] = t; else delete a.notes[exId];
+  await db.set('active', a);
+  await syncActiveToSessions(); // once the day is meaningful, the note is saved with it
+  return a;
+}
+
+// The most recent PAST note for an exercise (before `beforeDate`, so today's own note
+// isn't shown back as "last time"). Order-independent: picks the newest by date.
+export async function lastNote(exId, beforeDate) {
+  const sessions = await getSessions();
+  let best = null;
+  for (const s of sessions) {
+    if (beforeDate && s.date >= beforeDate) continue;
+    const e = (s.entries || []).find(x => x.exId === exId && x.note);
+    if (e && (!best || s.date > best.date)) best = { note: e.note, date: s.date };
+  }
+  return best;
 }
 export async function logSet(exId, setIndex, weight, reps, rir = null) {
   const a = await getActive();

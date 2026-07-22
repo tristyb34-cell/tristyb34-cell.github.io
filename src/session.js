@@ -8,7 +8,7 @@
    ============================================================ */
 import { LIBRARY } from './program.js';
 import { WARMUP, COOLDOWN } from './data.js';
-import { startActive, getActive, logSet, finishActive, suggestion, setSetRir, repTarget, setIncrement, sessionProgress, getSessions } from './workouts.js';
+import { startActive, getActive, logSet, finishActive, suggestion, setSetRir, repTarget, setIncrement, sessionProgress, getSessions, setNote, lastNote } from './workouts.js';
 import { isSpotter, safeSub } from './safety.js';
 import { swapCandidates, getGym, hasEquipment } from './equipment.js';
 import { getPlan, savePlan } from './plan.js';
@@ -70,9 +70,42 @@ async function chooseRir(exId, setIndex, btn) {
 // keypads often emit a comma, which type=number silently rejected — hence 7.5 → 8.
 const num = (v) => { const n = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isNaN(n) ? 0 : n; };
 
+let noteTimer = null;
+
 function clearTimers() {
   if (frameTimer) { clearInterval(frameTimer); frameTimer = null; }
   if (restTimer) { clearInterval(restTimer); restTimer = null; }
+  if (noteTimer) { clearTimeout(noteTimer); noteTimer = null; }
+}
+
+// free user text goes into innerHTML, so escape it (a note with < or </textarea>
+// would otherwise break the markup or inject).
+const escapeHtml = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, m =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+
+// "2026-07-14" -> "14 July" (year only if not this year)
+function fmtNoteDate(iso) {
+  const d = new Date(iso + 'T00:00:00');
+  if (isNaN(d)) return iso;
+  const opts = d.getFullYear() === new Date().getFullYear()
+    ? { day: 'numeric', month: 'long' }
+    : { day: 'numeric', month: 'long', year: 'numeric' };
+  return d.toLocaleDateString('en-GB', opts);
+}
+
+// Flush the note textarea's LIVE value before any repaint re-reads state. setNote is
+// async, so a blur-then-repaint races and can lose the last keystrokes; every repaint
+// goes through renderStep, so flushing there (before S.idx changes) is the one safe
+// chokepoint. Keys off the OUTGOING S.idx so a jump doesn't file the note under the
+// wrong exercise. Returns focus/caret state so the note can win focus if it had it.
+async function flushNote() {
+  const ta = S.root && S.root.querySelector('#ex-note-input');
+  if (!ta || S.idx == null || !S.day.items[S.idx]) return null;
+  if (noteTimer) { clearTimeout(noteTimer); noteTimer = null; }
+  const hadFocus = document.activeElement === ta;
+  const caret = hadFocus ? [ta.selectionStart, ta.selectionEnd] : null;
+  await setNote(S.day.items[S.idx].id, ta.value);
+  return { hadFocus, caret };
 }
 
 // Entry from Today's Start button: run the pre-workout check-in first (once a day),
@@ -257,6 +290,7 @@ function applySafety(idx) {
    ============================================================ */
 async function renderStep(idx, focusSel) {
   clearTimers();
+  const noteState = await flushNote(); // save the outgoing note BEFORE idx/state changes
   const total = S.day.items.length;
   if (idx >= total) return finishFlow();
   if (idx < 0) idx = 0;
@@ -283,6 +317,8 @@ async function renderStep(idx, focusSel) {
   // per-exercise meant skipping past exercise 1 dragged the warm-up along to the next
   // one. Once ANY set is logged the workout has begun, so it's gone for good.
   const isFirstOfSession = idx === 0 && !anySetLogged();
+  const activeNote = (S.active.notes && S.active.notes[item.id]) || '';
+  const prevNote = await lastNote(item.id, S.active.date);
 
   S.root.innerHTML = `
     <div class="step-top">
@@ -377,6 +413,14 @@ async function renderStep(idx, focusSel) {
 
     ${complete ? '' : `<button class="btn allset" id="all-set">✓ Log all ${N} sets as shown</button>`}
 
+    <div class="ex-note">
+      ${prevNote ? `<p class="ex-note-last"><span aria-hidden="true">📝</span> Last time (${escapeHtml(fmtNoteDate(prevNote.date))}): ${escapeHtml(prevNote.note)}</p>` : ''}
+      <label class="ex-note-label" for="ex-note-input">Note for today (optional)</label>
+      <textarea id="ex-note-input" class="ex-note-input" rows="2" aria-describedby="ex-note-hint"
+        autocapitalize="sentences" autocorrect="on" spellcheck="true" autocomplete="off">${escapeHtml(activeNote)}</textarea>
+      <p class="working-hint" id="ex-note-hint">Anything worth remembering next time, e.g. "left shoulder pinched on set 3".</p>
+    </div>
+
     <div class="ctrl-row">
       <button class="pill" id="swap-ex">⇄ Swap exercise</button>
       ${total > 1 ? `<button class="pill" id="defer-ex">⤓ Do later</button>` : ''}
@@ -406,15 +450,19 @@ async function renderStep(idx, focusSel) {
 
   wireStep(item, ex, N, target, sug);
 
-  // restore focus after a destructive repaint so an AT user never lands on <body>
-  if (focusSel) {
-    const el = S.root.querySelector(focusSel);
+  // restore focus after a destructive repaint so an AT user never lands on <body>.
+  // If the note textarea still had focus at repaint (i.e. the repaint wasn't from
+  // tapping another control, which would have blurred it), the note wins and we
+  // restore the caret so typing isn't interrupted.
+  const sel = (noteState && noteState.hadFocus) ? '#ex-note-input' : focusSel;
+  if (sel) {
+    const el = S.root.querySelector(sel);
     if (el && el.focus) {
-      // a new exercise starts at the top of the page, not wherever you were scrolled to.
-      // preventScroll matters: focusing the heading would otherwise drag it back to
-      // mid-viewport and undo the scroll.
-      if (focusSel === '#ex-name') window.scrollTo(0, 0);
+      if (sel === '#ex-name') window.scrollTo(0, 0);
       el.focus({ preventScroll: true });
+      if (sel === '#ex-note-input' && noteState.caret && el.setSelectionRange) {
+        el.setSelectionRange(noteState.caret[0], noteState.caret[1]);
+      }
     }
   }
 }
@@ -422,6 +470,21 @@ async function renderStep(idx, focusSel) {
 function wireStep(item, ex, N, target, sug) {
   const q = (s) => S.root.querySelector(s);
   const inc = (sug && sug.inc) || 2.5;
+
+  // optional per-exercise note: debounced autosave on input, hard save on blur.
+  // No save button, no announcement (the text sits visibly in the field = its own
+  // confirmation). renderStep's flushNote covers the repaint-mid-typing case.
+  const note = q('#ex-note-input');
+  if (note) {
+    note.addEventListener('input', () => {
+      if (noteTimer) clearTimeout(noteTimer);
+      noteTimer = setTimeout(() => setNote(item.id, note.value), 500);
+    });
+    note.addEventListener('blur', () => {
+      if (noteTimer) { clearTimeout(noteTimer); noteTimer = null; }
+      setNote(item.id, note.value);
+    });
+  }
 
   q('#exit').addEventListener('click', () => {
     clearTimers();

@@ -1097,6 +1097,30 @@ h1.screen-title { font-size: 31px; font-weight: 850; line-height: 1.04; letter-s
 .ci-unit { font-size: 15px; font-weight: 700; color: var(--text-dim); }
 .working-hint { font-size: 12px; color: var(--text-faint); margin-top: 6px; }
 
+/* per-exercise note (under the set logging). Sits between the sets and the ctrl-row. */
+.ex-note { margin: 8px 0; }
+.ex-note-last {
+  font-size: 13px; color: var(--text-dim); margin: 0 0 8px;
+  padding: 8px 10px; background: var(--surface-2); border-radius: 8px;
+  border-left: 3px solid var(--accent);
+}
+.ex-note-label { display: block; font-size: 12.5px; color: var(--text-dim); margin-bottom: 6px; }
+.ex-note-input {
+  width: 100%; box-sizing: border-box; resize: none;
+  font: inherit; font-size: 16px; /* 16px stops iOS zoom-on-focus */
+  color: var(--text); background: var(--surface-2);
+  border: 1px solid var(--text-dim); border-radius: 10px; padding: 10px 12px;
+  line-height: 1.4;
+}
+.ex-note-input::placeholder { color: var(--text-dim); opacity: 1; }
+.ex-note-input:focus-visible {
+  outline: 2px solid var(--focus); outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(var(--bg-rgb), .9); /* halo separates it from the set rows + Next */
+  border-color: var(--accent);
+}
+/* the note as shown back in History under a past exercise */
+.hist-note { font-size: 13px; color: var(--text-dim); margin: 4px 0 0; font-style: italic; }
+
 /* Check-in food log (today + caught-up rest days) */
 .ci-food-title { font-size: 15px; font-weight: 800; margin: 22px 0 4px; color: var(--text); }
 .ci-food-sub { font-size: 13px; color: var(--text-faint); margin-bottom: 12px; }

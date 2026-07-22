@@ -4,6 +4,9 @@ import { sparkline, lineChart, heatmap } from '../charts.js';
 import { missedTrainingDays, computeConsistency } from '../consistency.js';
 import { announce } from '../a11y.js';
 
+const escapeHtml = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, m =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+
 // V-taper width drivers — the muscles his Spider-Man goal lives or dies on
 const VTAPER = new Set(['Shoulders', 'Back']);
 const VOL_ORDER = ['Shoulders', 'Back', 'Chest', 'Biceps', 'Triceps', 'Legs', 'Core'];
@@ -167,6 +170,7 @@ async function paint(root) {
       // attendance-only records (recovered/backfilled) have no sets — say so plainly
       const meta = s.entries.length ? `${n} sets · ${fmtTon(vol)}` : 'Attended (no sets logged)';
       const exLine = s.entries.length ? s.entries.map(e => LIBRARY[e.exId] ? LIBRARY[e.exId].name : e.exId).join(' · ') : 'Marked as trained';
+      const noteEntries = s.entries.filter(e => e.note);
       return `
         <div class="card hist-card">
           <div class="hist-top">
@@ -174,6 +178,7 @@ async function paint(root) {
             <div class="ex-sub">${meta}</div>
           </div>
           <div class="hist-ex">${exLine}</div>
+          ${noteEntries.map(e => `<p class="hist-note"><span aria-hidden="true">📝</span> ${escapeHtml(LIBRARY[e.exId] ? LIBRARY[e.exId].name : e.exId)}: ${escapeHtml(e.note)}</p>`).join('')}
         </div>`;
     }).join('')}
   `;
