@@ -70,6 +70,14 @@ function reorderPushAddHinge(plan) {
   return plan;
 }
 
+// v9: he hates lunges, and his leg press already covers the quads they mainly hit,
+// so drop them. Leg Press + RDL + Seated Leg Curl + calves is still a complete
+// maintenance leg day (quads, hamstrings, glutes, calves).
+function dropLunges(plan) {
+  for (const day of plan) day.items = day.items.filter(i => i.id !== 'Dumbbell_Lunges');
+  return plan;
+}
+
 export async function getPlan() {
   let plan = await db.get('plan', null);
   if (!plan) {
@@ -91,6 +99,7 @@ export async function getPlan() {
     if (stored < 5) plan = appendGrip(plan);
     if (stored < 6) plan = bookendDelts(plan);
     if (stored < 8) plan = reorderPushAddHinge(plan);
+    if (stored < 9) plan = dropLunges(plan);
   }
   await db.set('plan', plan);
   await db.set('planVersion', PLAN_VERSION);
