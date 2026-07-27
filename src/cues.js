@@ -17,16 +17,22 @@
 export const CUES = {
   // ---------------- Push (Tue) ----------------
   'Incline_Dumbbell_Press': {
-    cue: 'Hug a big tree on the way up. Squeeze the dumbbells toward each other at the top even though they never touch.',
-    feel: 'Across the upper chest, just under the collarbone, and a stretch through the chest at the bottom.',
-    wrong: 'If your front delts and triceps are cooked but your chest never lit up, the bench is too steep or your elbows are tucked to your ribs. Drop the incline and let the elbows open to about 45 degrees.',
-    range: 'Lower until your upper arms are level with your torso and the chest stretches. Two seconds down, drive up.',
+    cue: 'Shoulder blades pinned back and down, chest puffed proud, before you even unrack. Hug a big tree on the way up and squeeze the dumbbells toward each other at the top even though they never touch.',
+    feel: 'Across the upper chest, just under the collarbone, and a big stretch through the chest at the bottom.',
+    wrong: "Not feeling your chest? Three fixes, in order. 1) Bench too steep hands it to your front delts: set it to about 30 degrees, one or two notches off flat, not 45. 2) Elbows tucked to your ribs makes it triceps and shoulders: let them open to about 45 degrees from your body. 3) Grinding a heavy weight recruits everything but the chest: go a touch lighter and control it. If your shoulders roll forward, the delts steal the rep every time.",
+    range: 'Lower for two seconds until your upper arms are level with your torso and the chest stretches, then drive up and squeeze the dumbbells together at the top. Ego down, chest on.',
   },
   'Cable_Chest_Press': {
     cue: "Push like you're closing a heavy door with both hands. Keep your shoulder blades pinned back so the chest does the work, not the shoulders.",
     feel: 'The middle of the chest, squeezing inward as your hands come together at the end.',
     wrong: 'If you feel it mostly in the front of your shoulders, your shoulder blades rolled forward. Pin them back and down before the first rep.',
     range: 'Let your hands travel behind your chest line at the back, then press all the way to a squeeze. Never lock the elbows.',
+  },
+  'Decline_Dumbbell_Flyes': {
+    cue: 'Soft bend in the elbows, locked there the whole set. Open your arms wide like a slow bear hug in reverse, then hug the dumbbells back together over your chest and squeeze. This is the move that teaches you where your chest is.',
+    feel: 'A deep stretch across the chest at the bottom, then a hard squeeze through the middle as your hands come together. Pure chest, no triceps.',
+    wrong: 'If your elbows are bending and straightening, you turned it into a press. Keep the elbow angle fixed and think of your arms as one long hinge from the shoulder. Going too heavy kills the stretch, stay light and feel it.',
+    range: 'Down until you feel the stretch, never so far it tweaks the shoulder, then back up to a squeeze without clanking the dumbbells together.',
   },
   'Dumbbell_Shoulder_Press': {
     cue: 'Press to the sky but stop just short of locking out, keeping a sliver of bend so the delt never gets a rest.',
@@ -115,6 +121,12 @@ export const CUES = {
     feel: 'Front-leg quad and glute. The back leg is a kickstand, not an engine.',
     wrong: 'If you feel it mostly in the back leg, your step is too short. If the front knee wobbles inward on the way up, slow down and shorten the range.',
     range: 'Back knee to just above the floor, front thigh parallel. Push up without letting the torso pitch forward.',
+  },
+  'Band_Good_Morning_Pull_Through': {
+    cue: "Do this on the CABLE, not a barbell. Face away from a low pulley, rope between your legs, take a step out for tension. Soft knees, then push your hips back like you are closing a car door with your bum. Stand tall by driving the hips forward and squeezing your glutes. It is a good morning where the weight pulls you backward, not down through your spine.",
+    feel: 'A stretch up the back of the hamstrings as you hinge back, then the glutes firing hard to snap you upright.',
+    wrong: "Do NOT swap this for a barbell good morning. The whole reason it replaced your deadlift is that the load pulls horizontally and spares your lower back, a bar across your traps loads the spine and brings the back pain right back. In the movement itself: if your lower back rounds or you feel it there, your back is doing the hinge instead of your hips. Chest up, flat back, push the hips STRAIGHT back, soft knees.",
+    range: 'Hinge back until you feel the hamstring stretch, keeping a flat back, then drive all the way to standing tall and squeeze. No leaning back at the top.',
   },
   'Seated_Leg_Curl': {
     cue: 'Drag your heels toward your bum and squeeze the hamstring hard, toes pulled up toward your shins. Slow on the way back.',
