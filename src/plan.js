@@ -78,6 +78,55 @@ function dropLunges(plan) {
   return plan;
 }
 
+// v10: the whole plan got restructured after reviewing his logs. Two problems: he was
+// grinding ~85% of sets to failure (RIR 0-1) and cramming 7-9 exercises into a rushed
+// 30-min window he could never finish, so nothing progressed. Fix, agreed with him:
+//  - Cut junk/redundant volume so each day is ~5-6 load-bearing moves for a real 45-min
+//    session with proper rest (that alone eases the RIR problem: rushed rest was part of it).
+//  - Keep the upper-body / V-taper bias he wants (chest, shoulders, back, arms are priority;
+//    legs stay maintenance): Push and Pull get a 6th priority move (chest fly, wide-grip
+//    pulldown), side-delt volume kept, arms kept generous.
+//  - Swap the Romanian deadlift (kept hurting his back) for a Band Good Morning / Pull-Through:
+//    same hip hinge and posterior chain, but horizontal load so his spine isn't compressed.
+// Full rebuild of all four days, so a customised plan gets it wholesale (he signed off on it).
+function rebuildV10(plan) {
+  const days = {
+    Tue: [
+      { id: 'Incline_Dumbbell_Press', sets: 4, reps: '8-12', rest: 90 },
+      { id: 'Cable_Chest_Press', sets: 3, reps: '8-12', rest: 75 },
+      { id: 'Decline_Dumbbell_Flyes', sets: 3, reps: '10-15', rest: 60 },
+      { id: 'Dumbbell_Shoulder_Press', sets: 3, reps: '8-10', rest: 90 },
+      { id: 'Side_Lateral_Raise', sets: 4, reps: '12-20', rest: 75 },
+      { id: 'Triceps_Pushdown', sets: 3, reps: '10-15', rest: 60 },
+    ],
+    Thu: [
+      { id: 'Close-Grip_Front_Lat_Pulldown', sets: 4, reps: '8-12', rest: 90 },
+      { id: 'Wide-Grip_Lat_Pulldown', sets: 3, reps: '10-12', rest: 90 },
+      { id: 'Seated_Cable_Rows', sets: 4, reps: '10-12', rest: 90 },
+      { id: 'Face_Pull', sets: 3, reps: '15-20', rest: 60 },
+      { id: 'Incline_Dumbbell_Curl', sets: 3, reps: '10-12', rest: 60 },
+      { id: 'Alternate_Hammer_Curl', sets: 3, reps: '10-12', rest: 60 },
+    ],
+    Fri: [
+      { id: 'Leg_Press', sets: 4, reps: '10-12', rest: 120 },
+      { id: 'Band_Good_Morning_Pull_Through', sets: 3, reps: '12-15', rest: 90 },
+      { id: 'Seated_Leg_Curl', sets: 3, reps: '10-12', rest: 90 },
+      { id: 'Standing_Calf_Raises', sets: 3, reps: '12-15', rest: 60 },
+      { id: 'Air_Bike', sets: 3, reps: '15-20', rest: 45 },
+      { id: 'Plank', sets: 3, reps: '45s', rest: 45 },
+    ],
+    Sat: [
+      { id: 'Side_Lateral_Raise', sets: 4, reps: '12-20', rest: 60 },
+      { id: 'Barbell_Curl', sets: 3, reps: '8-12', rest: 60 },
+      { id: 'Cable_Hammer_Curls_-_Rope_Attachment', sets: 3, reps: '10-12', rest: 60 },
+      { id: 'Cable_Rope_Overhead_Triceps_Extension', sets: 3, reps: '10-15', rest: 75 },
+      { id: 'Bench_Dips', sets: 3, reps: '12-15', rest: 60 },
+    ],
+  };
+  for (const day of plan) if (days[day.dow]) day.items = days[day.dow].map(x => ({ ...x }));
+  return plan;
+}
+
 export async function getPlan() {
   let plan = await db.get('plan', null);
   if (!plan) {
@@ -100,6 +149,7 @@ export async function getPlan() {
     if (stored < 6) plan = bookendDelts(plan);
     if (stored < 8) plan = reorderPushAddHinge(plan);
     if (stored < 9) plan = dropLunges(plan);
+    if (stored < 10) plan = rebuildV10(plan);
   }
   await db.set('plan', plan);
   await db.set('planVersion', PLAN_VERSION);
