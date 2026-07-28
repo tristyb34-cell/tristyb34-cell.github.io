@@ -553,6 +553,21 @@ h1.screen-title { font-size: 31px; font-weight: 850; line-height: 1.04; letter-s
 .meas-row:last-child { border-bottom: none; }
 .meas-row .up { color: var(--good); font-weight: 700; }
 .meas-row .down { color: var(--warn); font-weight: 700; }
+.meas-editing[hidden] { display: none; }
+.meas-editing {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin-bottom: 14px; padding: 8px 6px 8px 12px; border-radius: var(--r-sm);
+  background: var(--surface-2); border-left: 3px solid var(--accent);
+  font-size: 13px; color: var(--text-dim);
+}
+.meas-entry { margin: 0; padding: 14px; }
+.meas-entry-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.meas-entry .ex-sub { margin-top: 6px; }
+.meas-entry-actions { display: flex; gap: 8px; flex: none; }
+.meas-entry-actions .j-del {
+  box-sizing: border-box; min-width: 44px; min-height: 44px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+}
 
 /* photos */
 .photo-compare { display: flex; gap: 10px; }

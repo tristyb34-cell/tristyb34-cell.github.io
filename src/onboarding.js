@@ -18,8 +18,8 @@ export async function openOnboarding(root, isEdit = false, onDone = null) {
       </div>
 
       <div class="onboard-grid">
-        <label class="meas-field"><span>Weight (kg)</span><input class="inp" id="o-weight" type="number" inputmode="decimal" value="${p.weight}" /></label>
-        <label class="meas-field"><span>Goal weight (kg)</span><input class="inp" id="o-goal" type="number" inputmode="decimal" value="${p.goalWeight}" /></label>
+        <label class="meas-field"><span>Weight (kg)</span><input class="inp" id="o-weight" type="text" inputmode="decimal" pattern="[0-9.,]*" value="${p.weight}" /></label>
+        <label class="meas-field"><span>Goal weight (kg)</span><input class="inp" id="o-goal" type="text" inputmode="decimal" pattern="[0-9.,]*" value="${p.goalWeight}" /></label>
         <label class="meas-field"><span>Height (cm)</span><input class="inp" id="o-height" type="number" inputmode="numeric" value="${p.height}" /></label>
         <label class="meas-field"><span>Age</span><input class="inp" id="o-age" type="number" inputmode="numeric" value="${p.age}" /></label>
       </div>
@@ -45,7 +45,7 @@ export async function openOnboarding(root, isEdit = false, onDone = null) {
 
   const state = { sex: p.sex, activity: p.activity };
 
-  const num = (id) => parseFloat(overlay.querySelector(id).value) || 0;
+  const num = (id) => parseFloat(String(overlay.querySelector(id).value).replace(',', '.')) || 0;
   function refreshPreview() {
     const prof = { ...state, height: num('#o-height'), age: num('#o-age'), sex: state.sex, activity: state.activity };
     const t = baseTargets(prof, num('#o-weight'));

@@ -3,8 +3,13 @@ import { lineChart } from '../charts.js';
 import { getTargets } from '../profile.js';
 import { openReview } from '../review.js';
 import { openOnboarding } from '../onboarding.js';
+import { announce } from '../a11y.js';
 
 const todayKey = () => new Date().toISOString().slice(0, 10);
+/* SA keyboards give a comma for decimals and type="number" silently eats it, so accept both. */
+const num = (v) => { const n = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isNaN(n) ? null : n; };
+/* date of the measurement entry being edited; null = logging a new one for today */
+let editDate = null;
 const fmtDate = (iso) => new Date(iso + 'T00:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: '2-digit' });
 
 async function getWeighins() { return (await db.get('weighins', [])) || []; }
@@ -37,6 +42,7 @@ function trendSeries(weighins) {
 }
 
 export function renderProgress() {
+  editDate = null;
   return { html: '', onMount: (root) => paint(root) };
 }
 
@@ -46,6 +52,9 @@ async function paint(root) {
   const photos = await getPhotos();
   const sleeps = await getSleep();
   const tg = await getTargets();
+
+  const editing = editDate ? (measurements.find(m => m.date === editDate) || null) : null;
+  if (!editing) editDate = null;
 
   const trend = trendSeries(weighins);
   const current = tg.trendWeight;
@@ -71,10 +80,12 @@ async function paint(root) {
           ${toGoal != null ? `<br>${toGoal > 0 ? `${toGoal}kg to your ${tg.goalWeight}kg target` : `at / past your ${tg.goalWeight}kg target 🎯`}` : ''}
         </div>
       </div>
-      <div class="weigh-input">
-        <input class="inp" id="w-input" type="number" inputmode="decimal" placeholder="today’s kg" />
+      <label class="j-label" for="w-input" style="margin:16px 0 8px;">Today’s weigh-in (kg)</label>
+      <div class="weigh-input" style="margin-top:0;">
+        <input class="inp" id="w-input" type="text" inputmode="decimal" pattern="[0-9.,]*" placeholder="e.g. 73,6" />
         <button class="btn" id="w-log" style="width:auto; padding:12px 20px;">Log</button>
       </div>
+      <p class="set-error" id="w-error" role="alert"></p>
       <p class="coach-last" style="margin-top:10px;">Daily target: <strong>${tg.cal} cal · ${tg.protein}g protein</strong>${adjNote}. Weigh in every morning, we only trust the 7-day average.</p>
     </div>
 
@@ -86,10 +97,12 @@ async function paint(root) {
         <div style="font-size:30px; font-weight:850;">${sleepAvg != null ? sleepAvg : '—'}<span style="font-size:15px;">h</span></div>
         <div class="lead">${sleepAvg != null ? `7-day average${sleepAvg < 7 ? ' · aim for 7–9h' : ' · dialled in 👌'}` : 'Log last night’s sleep'}</div>
       </div>
-      <div class="weigh-input">
-        <input class="inp" id="s-input" type="number" inputmode="decimal" step="0.5" placeholder="hours slept" />
+      <label class="j-label" for="s-input" style="margin:16px 0 8px;">Hours slept last night</label>
+      <div class="weigh-input" style="margin-top:0;">
+        <input class="inp" id="s-input" type="text" inputmode="decimal" pattern="[0-9.,]*" placeholder="e.g. 7,5" />
         <button class="btn" id="s-log" style="width:auto; padding:12px 20px;">Log</button>
       </div>
+      <p class="set-error" id="s-error" role="alert"></p>
     </div>
 
     <div class="section-label">Monthly review</div>
@@ -104,16 +117,22 @@ async function paint(root) {
     <input type="file" id="photo-file" accept="image/*" capture="user" hidden />
 
     <div class="section-label">Measurements</div>
-    <div class="card">
-      <div class="meas-grid">
+    <div class="card" id="meas-card">
+      <div class="meas-editing" id="meas-editing" role="status" aria-live="polite" ${editing ? '' : 'hidden'}>
+        <span>Editing the entry from <strong>${editing ? fmtDate(editing.date) : ''}</strong></span>
+        <button type="button" class="j-del" id="meas-cancel" aria-label="Cancel editing, return to new entry"><span aria-hidden="true">✕</span></button>
+      </div>
+      <div class="meas-grid" aria-describedby="meas-editing">
         ${['weight', 'shoulders', 'chest', 'arm', 'waist'].map(k =>
           `<label class="meas-field"><span>${k}${k === 'weight' ? ' (kg)' : ' (cm)'}</span>
-            <input class="inp" data-m="${k}" type="number" inputmode="decimal" placeholder="—" /></label>`).join('')}
+            <input class="inp" data-m="${k}" type="text" inputmode="decimal" pattern="[0-9.,]*" placeholder="—" value="${editing && editing[k] != null ? editing[k] : ''}" /></label>`).join('')}
       </div>
       <div style="height:10px;"></div>
-      <button class="btn" id="meas-log">Save today’s measurements</button>
+      <button class="btn" id="meas-log">${editing ? 'Update this entry' : 'Save today’s measurements'}</button>
+      <p class="set-error" id="meas-error" role="alert"></p>
     </div>
     ${renderMeasurements(measurements)}
+    ${renderMeasEntries(measurements)}
 
     <div class="section-label">Your stats</div>
     <div class="card">
@@ -133,12 +152,18 @@ async function paint(root) {
   `;
 
   root.querySelector('#w-log').addEventListener('click', async () => {
-    const v = parseFloat(root.querySelector('#w-input').value);
-    if (!v) return; await logWeight(v); paint(root);
+    const err = root.querySelector('#w-error');
+    const v = num(root.querySelector('#w-input').value);
+    if (!v) { err.textContent = 'Pop your weight in first, like 73,6'; return; }
+    err.textContent = '';
+    await logWeight(v); announce(`Weight logged, ${v} kilograms.`); paint(root);
   });
   root.querySelector('#s-log').addEventListener('click', async () => {
-    const v = parseFloat(root.querySelector('#s-input').value);
-    if (!v) return; await logSleep(v); paint(root);
+    const err = root.querySelector('#s-error');
+    const v = num(root.querySelector('#s-input').value);
+    if (!v) { err.textContent = 'How many hours? Something like 7,5'; return; }
+    err.textContent = '';
+    await logSleep(v); announce(`Sleep logged, ${v} hours.`); paint(root);
   });
   root.querySelector('#review-btn').addEventListener('click', () => openReview(root));
   root.querySelector('#profile-btn').addEventListener('click', () => openOnboarding(root, true));
@@ -153,15 +178,56 @@ async function paint(root) {
   });
 
   root.querySelector('#meas-log').addEventListener('click', async () => {
-    const rec = { date: todayKey() }; let any = false;
-    root.querySelectorAll('[data-m]').forEach(inp => { const v = parseFloat(inp.value); if (v) { rec[inp.dataset.m] = v; any = true; } });
-    if (!any) return;
+    const err = root.querySelector('#meas-error');
+    const wasEditing = editDate;
+    const rec = { date: wasEditing || todayKey() }; let any = false;
+    root.querySelectorAll('[data-m]').forEach(inp => { const v = num(inp.value); if (v) { rec[inp.dataset.m] = v; any = true; } });
+    if (!any) { err.textContent = 'Fill in at least one measurement first.'; return; }
+    err.textContent = '';
     const all = await getMeasurements();
     const i = all.findIndex(m => m.date === rec.date);
     if (i >= 0) all[i] = { ...all[i], ...rec }; else all.push(rec);
     all.sort((a, b) => a.date.localeCompare(b.date));
-    await db.set('measurements', all); paint(root);
+    await db.set('measurements', all);
+    editDate = null;
+    announce(wasEditing ? 'Measurements updated.' : 'Measurements saved.');
+    paint(root);
   });
+
+  const cancelBtn = root.querySelector('#meas-cancel');
+  if (cancelBtn) cancelBtn.addEventListener('click', async () => {
+    const wasEditing = editDate;
+    editDate = null;
+    announce('Edit cancelled.');
+    await paint(root);
+    const back = root.querySelector(`[data-medit="${wasEditing}"]`) || root.querySelector('#meas-heading');
+    if (back) back.focus();
+  });
+
+  root.querySelectorAll('[data-medit]').forEach(btn => btn.addEventListener('click', async () => {
+    editDate = btn.dataset.medit;
+    await paint(root);
+    announce(`Editing measurements from ${fmtDate(editDate)}.`);
+    const card = root.querySelector('#meas-card');
+    if (!card) return;
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const first = card.querySelector('[data-m]');
+    // double rAF so VoiceOver reads the mode change before focus moves
+    if (first) requestAnimationFrame(() => requestAnimationFrame(() => first.focus({ preventScroll: true })));
+  }));
+
+  root.querySelectorAll('[data-mdel]').forEach(btn => btn.addEventListener('click', async () => {
+    const d = btn.dataset.mdel;
+    if (!confirm(`Delete the measurements from ${fmtDate(d)}? This can’t be undone.`)) return;
+    const all = (await getMeasurements()).filter(m => m.date !== d);
+    await db.set('measurements', all);
+    if (editDate === d) editDate = null;
+    announce('Entry deleted.');
+    await paint(root);
+    // deltas above change with the list, so we repaint and put focus back on the list
+    const next = root.querySelector('[data-medit]') || root.querySelector('#meas-log');
+    if (next) next.focus();
+  }));
 
   const msg = root.querySelector('#backup-msg');
   root.querySelector('#btn-export').addEventListener('click', async () => {
@@ -202,10 +268,35 @@ function renderMeasurements(ms) {
     const d = base[k] != null ? Math.round((last[k] - base[k]) * 10) / 10 : null;
     const unit = k === 'weight' ? 'kg' : 'cm';
     const sign = d > 0 ? '+' : '';
-    return `<div class="meas-row"><span>${k}</span><strong>${last[k]}${unit}</strong>
+    return `<div class="meas-row"><span>${k}</span><strong>${round1(last[k])}${unit}</strong>
       <span class="${d > 0 ? 'up' : d < 0 ? 'down' : ''}">${d != null ? `${sign}${d}` : ''}</span></div>`;
   }).join('');
   return `<div class="card"><div class="ex-sub" style="margin-bottom:8px;">Latest vs day one (${fmtDate(base.date)})</div>${rows}</div>`;
+}
+
+const round1 = (n) => Math.round(n * 10) / 10;
+
+/* Every saved entry, oldest first, so a wrong baseline can be fixed on-device. */
+function renderMeasEntries(ms) {
+  if (!ms.length) return '';
+  const keys = [['weight', 'Weight', 'kg'], ['shoulders', 'Shoulders', 'cm'], ['chest', 'Chest', 'cm'], ['arm', 'Arm', 'cm'], ['waist', 'Waist', 'cm']];
+  const rows = ms.map((m, i) => {
+    const label = fmtDate(m.date);
+    const vals = keys.filter(([k]) => m[k] != null).map(([k, lbl, u]) => `${lbl} ${round1(m[k])} ${u}`).join(', ');
+    return `<li class="card meas-entry" id="meas-entry-${m.date}">
+      <div class="meas-entry-top">
+        <span class="j-date">${label}${i === 0 ? ' <span class="pill">day one</span>' : ''}</span>
+        <span class="meas-entry-actions">
+          <button type="button" class="j-del" data-medit="${m.date}" aria-label="Edit measurements from ${label}"><span aria-hidden="true">✎</span></button>
+          <button type="button" class="j-del" data-mdel="${m.date}" aria-label="Delete measurements from ${label}"><span aria-hidden="true">🗑</span></button>
+        </span>
+      </div>
+      <p class="ex-sub">${vals || 'no values'}</p>
+    </li>`;
+  }).join('');
+  return `<h2 class="section-label" id="meas-heading" tabindex="-1">Saved measurements</h2>
+    <p class="lead" style="margin:-4px 4px 10px;">Day one is what every delta above is measured from. Tap ✎ to correct one.</p>
+    <ul class="j-list" aria-label="Saved measurements, oldest first">${rows}</ul>`;
 }
 
 function compress(file, max = 720, quality = 0.7) {
