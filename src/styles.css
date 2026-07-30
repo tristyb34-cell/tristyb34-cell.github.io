@@ -1088,12 +1088,20 @@ h1.screen-title { font-size: 31px; font-weight: 850; line-height: 1.04; letter-s
 .bonus-card { border: 1px dashed var(--line); }
 .bonus-title { font-size: 18px; font-weight: 850; margin: 4px 0 6px; color: var(--text); }
 
-/* Occasional lesson tip in the rest overlay */
-.rest-tip { max-width: 320px; margin: 4px auto 2px; padding: 12px 14px; border-radius: var(--r-md);
+/* Learn-while-you-rest content in the rest overlay. Short rests get a one-line
+   glance; long rests get a lesson chunk; the last 15s swaps to a refocus cue.
+   Scrolls inside the card so a two-paragraph chunk never buries the Skip button. */
+.rest-content { max-width: 340px; margin: 8px auto 2px; padding: 12px 14px; border-radius: var(--r-md);
   background: var(--surface-2); border: 1px solid var(--line); text-align: left;
-  font-size: 13.5px; line-height: 1.5; color: var(--text-dim); }
-.rest-tip-label { display: block; font-size: 11px; font-weight: 800; letter-spacing: .04em;
-  text-transform: uppercase; color: var(--accent); margin-bottom: 5px; }
+  max-height: 38vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.rest-content:empty { display: none; }
+.rest-content:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.rc-label { display: block; font-size: 11px; font-weight: 800; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--cue-label); margin-bottom: 6px; }
+.rc-glance { margin: 0; font-size: 15px; line-height: 1.5; color: var(--text); font-weight: 600; }
+.rc-para { margin: 0 0 8px; font-size: 14px; line-height: 1.55; color: var(--text-dim); }
+.rc-para:last-child { margin-bottom: 0; }
+.rc-refocus { margin: 0; font-size: 15px; line-height: 1.45; color: var(--text); font-weight: 700; }
 
 /* Collapsible "more" area on Today — tucks the occasional prompts */
 .more-section { margin-top: 14px; }

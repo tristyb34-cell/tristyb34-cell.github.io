@@ -337,6 +337,38 @@ export function dailyArticle(dow) {
   return pool[epochDay % pool.length];
 }
 
+/* ---------------- rest-timer content ----------------
+   Dead time between sets becomes learning time. Two formats, and the
+   session picks by how long the rest is: a GLANCE (one punchy line, for
+   short 45-60s isolation rests) or a LESSON CHUNK (a paragraph, walked
+   through a whole lesson across the session's rests, for 90-120s compound
+   rests). See session.js startRest for the sizing + the last-15s refocus swap. */
+
+// Glance pool: every lesson's one-line teaser, plus the richer two-sentence
+// bites where they exist. Markup stripped so it's a clean single line.
+export const GLANCES = ARTICLES.flatMap(a => {
+  const g = a.teaser ? [a.teaser] : [];
+  if (a.short) for (const s of a.short) g.push(s.replace(/<[^>]+>/g, ''));
+  return g;
+});
+
+// An ordered reading queue of paragraphs for ONE session: the day's lesson
+// first (shoulder day opens with a shoulder lesson), then the rest of the
+// library, rotated by the day so different days flow into different follow-ons.
+// Each paragraph is tagged with its lesson's title + icon for the card header.
+export function restQueue(dow) {
+  const day = dailyArticle(dow);
+  const dayId = day ? day.id : null;
+  const others = ARTICLES.filter(a => a.id !== dayId);
+  const off = others.length ? (Math.floor(Date.now() / 86400000) % others.length) : 0;
+  const ordered = [day, ...others.slice(off), ...others.slice(0, off)].filter(Boolean);
+  const paras = [];
+  for (const a of ordered) {
+    (a.body || []).forEach((p, i) => paras.push({ text: p, title: a.title, icon: a.icon, first: i === 0 }));
+  }
+  return paras;
+}
+
 /* ---------------- "Got it" learned state ---------------- */
 export async function getLearned() {
   return new Set((await db.get('learned', [])) || []);

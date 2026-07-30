@@ -16,7 +16,7 @@ import { announce } from './a11y.js';
 import { formBlock } from './cues.js';
 import { getCheckin, saveCheckin, skipCheckin, foodCatchupDays, markFoodAnswered } from './checkins.js';
 import { mealsForDate, setMeal, getDayLog } from './nutrition.js';
-import { dailyArticle } from './knowledge.js';
+import { GLANCES, restQueue } from './knowledge.js';
 
 const stretchList = (items) => `<div class="stretch-list">${items.map(s =>
   `<div class="stretch-item"><span class="stretch-dot">›</span><div><div class="nm">${s.name}</div><div class="dt">${s.detail}</div></div><span class="du">${s.dur}</span></div>`).join('')}</div>`;
@@ -24,19 +24,38 @@ const stretchList = (items) => `<div class="stretch-list">${items.map(s =>
 let S = null;          // { root, day, idx, active }
 let frameTimer = null;
 let restTimer = null;
-let restCount = 0;     // rests this session — used to show a lesson tip OCCASIONALLY
+// Rest-timer content state (reset per session in renderSession). Dead time between
+// sets becomes learning time: short rests get a one-line GLANCE, long rests get a
+// LESSON CHUNK that walks through a whole lesson across the session. restQ is this
+// session's ordered paragraph queue; restPara is how far we've read; glanceIdx
+// rotates the one-liners so no two rests repeat.
+let restQ = [];
+let restPara = 0;
+let glanceIdx = 0;
 
-// One bite of the day's lesson, shown in the rest overlay every 3rd rest only.
-// Deliberately NOT every timer — dead time is for resting, not a lecture every set.
-function restTip() {
-  restCount += 1;
-  if (restCount % 3 !== 0) return '';
+// Pick content sized to the rest length. <=65s → a glance; longer → 1 paragraph
+// (2 on very long rests), advancing the lesson pointer. Returns the inner HTML for
+// #rest-content, already escaped. `label` is the small "why this is here" tag.
+function restContent(seconds) {
   try {
-    const a = dailyArticle(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date().getDay()]);
-    const line = a && a.short && a.short[0];
-    if (!line) return '';
-    const text = line.replace(/<[^>]+>/g, ''); // strip the bold markup for a clean one-liner
-    return `<div class="rest-tip"><span class="rest-tip-label">💡 While you rest</span><span>${text}</span></div>`;
+    if (seconds <= 65 || !restQ.length) {
+      const g = GLANCES.length ? GLANCES[glanceIdx % GLANCES.length] : '';
+      glanceIdx += 1;
+      if (!g) return '';
+      return `<span class="rc-label"><span aria-hidden="true">💡</span> While you rest</span><p class="rc-glance">${escapeHtml(g)}</p>`;
+    }
+    const n = seconds >= 105 ? 2 : 1;      // a bit more reading on the long compound rests
+    const chunk = [];
+    let head = null;
+    for (let k = 0; k < n && restPara < restQ.length; k++) {
+      const item = restQ[restPara]; restPara += 1;
+      if (!head) head = item;
+      chunk.push(item.text);
+    }
+    if (restPara >= restQ.length) restPara = 0; // loop the library for a marathon session
+    if (!head) return '';
+    return `<span class="rc-label"><span aria-hidden="true">${head.icon || '📖'}</span> ${escapeHtml(head.title)}</span>` +
+      chunk.map(p => `<p class="rc-para">${escapeHtml(p)}</p>`).join('');
   } catch (_) { return ''; }
 }
 
@@ -240,7 +259,10 @@ async function renderCheckin(root, day) {
 
 export async function renderSession(root, day) {
   clearTimers();
-  restCount = 0;
+  // fresh reading queue for this session: today's lesson first, then the library
+  restQ = restQueue(day.dow);
+  restPara = 0;
+  glanceIdx = 0;
   const active = await startActive(day);
   S = { root, day, idx: 0, active, guarded: new Set(), planned: {} };
   // Snapshot the PLANNED set count per exercise before anything can bump it.
@@ -781,7 +803,7 @@ function startRest(seconds, ctx = null) {
       <div class="rest-label">REST</div>
       <div class="rest-time" role="timer" aria-live="off">${remaining}s</div>
       ${rir}
-      ${restTip()}
+      <div id="rest-content" class="rest-content" tabindex="0" role="group" aria-label="While you rest">${restContent(seconds)}</div>
       <div class="rest-btns">
         <button id="rest-sub" aria-label="Subtract 15 seconds">−15s</button>
         <button id="rest-add" aria-label="Add 15 seconds">+15s</button>
@@ -804,8 +826,24 @@ function startRest(seconds, ctx = null) {
   document.addEventListener('keydown', onRestKey);
   document.addEventListener('visibilitychange', onVisible);
 
+  // the last ~15s: swap the lesson for a refocus cue so his head's back on the bar,
+  // not on the phone, when the timer hits zero. This is the "60 of the 90" tail.
+  const nextName = ctx && LIBRARY[ctx.exId] ? LIBRARY[ctx.exId].name : null;
+  let refocused = false;
+  const refocus = () => {
+    const c = overlay.querySelector('#rest-content');
+    if (!c) return;
+    c.innerHTML = `<span class="rc-label"><span aria-hidden="true">🎯</span> Get set</span><p class="rc-refocus">${nextName ? 'Next up: ' + escapeHtml(nextName) : 'Next set incoming'}</p>`;
+    // it's a short, time-critical status change with no focus move (WCAG 4.1.3) — send it
+    // through the live region, NOT aria-live on #rest-content (that would re-read the lesson).
+    announce(nextName ? `Get set. Next up: ${nextName}.` : 'Get set. Next set incoming.');
+    refocused = true;
+  };
+
   restTimer = setInterval(() => {
-    if (left() <= 0) { endRest(); return; }
+    const t = left();
+    if (t <= 0) { endRest(); return; }
+    if (t <= 15 && !refocused && seconds > 20) refocus(); // only worth it on real rests
     paintTime();
   }, 1000);
 
