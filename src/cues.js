@@ -196,6 +196,32 @@ export const CUES = {
     wrong: 'If you are grinding heavy weight here, you are asking for elbow pain. It should feel almost too light. That is correct.',
     range: 'Hands drop for a stretch, then lift to a squeeze. Slow, small, controlled.',
   },
+
+  // ---------------- Kettlebell + core (Sat, home) ----------------
+  'One-Arm_Kettlebell_Swings': {
+    cue: 'This is a HINGE, not a squat and not a lift with your arm. Hike the bell back between your legs like a rugby pass, then snap your hips forward hard, the bell floats up on the momentum. Your arm is just a rope.',
+    feel: 'Your glutes and hamstrings firing to snap you upright, and your abs bracing. If your shoulders or lower back are doing the work, the pattern is wrong.',
+    wrong: 'Squatting it (bending the knees to lower) or lifting the bell with your shoulder both dump the load onto your lower back, the exact thing we are protecting. Push your hips BACK to load, not down. Flat back the whole time. Start with a lighter bell until the hinge is automatic.',
+    range: 'Bell to about chest or eye height on the float, no higher, powered by the hips not a shoulder raise. Let it fall back into the next hinge, breathe out on the snap.',
+  },
+  'Two-Arm_Kettlebell_Military_Press': {
+    cue: 'Ribs down, abs braced, press the bells straight overhead without leaning back. Squeeze your glutes to keep your body a solid pillar.',
+    feel: 'Shoulders and triceps doing the press, core working to stop you arching.',
+    wrong: 'If your lower back arches and you lean back to heave them up, the weight is too heavy or your core is loose. Brace like you are about to be poked in the stomach, and press with a tall spine.',
+    range: 'From the rack at shoulder height to arms fully overhead, biceps by your ears. Lower under control, do not just drop into the rack.',
+  },
+  'One-Arm_Kettlebell_Row': {
+    cue: 'Hinge forward with a flat back, one hand braced on your thigh or a bench, and row the bell to your hip like starting a lawnmower. Lead with the elbow.',
+    feel: 'The muscles of your back, the lat and the mid-back, pulling. Squeeze the shoulder blade at the top.',
+    wrong: 'If you feel it mostly in your arm or you are twisting your torso to yank it up, slow down and think about pulling with your back, not your bicep. Keep your hips square.',
+    range: 'Let the bell hang for a full stretch at the bottom, pull to the hip, squeeze, lower slow.',
+  },
+  'Kettlebell_Hang_Clean': {
+    cue: 'From a hang, hinge slightly and pop the hips to guide the bell up, then let it roll around the wrist into the rack, do not let it crash onto your forearm. Punch your hand through so the bell settles gently.',
+    feel: 'A full-body move: hips driving, then the shoulder and core catching and stabilising the bell in the rack.',
+    wrong: 'A banged, bruised forearm means you are letting the bell flip over the top instead of guiding it around a loose fist. Keep the bell close to your body and tame the arc. Lighter bell to groove it.',
+    range: 'Hang to rack in one smooth move, powered by the hips. Reset each rep, quality over speed.',
+  },
 };
 
 const norm = (c) => (typeof c === 'string' ? { cue: c } : c);   // tolerate the old string shape

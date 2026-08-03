@@ -127,6 +127,58 @@ function rebuildV10(plan) {
   return plan;
 }
 
+// v11: Saturday can't be a gym day until October (Saturday soccer + the gym shuts at
+// noon right as he gets home), and he was skipping it every week. Solution he landed on:
+// make Saturday a HOME kettlebell + core session (he owns 4-20kg bells), done any time
+// after soccer, no gym needed. It does a different job than the old isolation Arms day:
+// conditioning, posterior chain (swings), and core, the things the plan was light on.
+// To keep his V-taper priorities from leaning on the kettlebell day, the best of the old
+// Arms & Delts volume moves onto the weekdays: Cable Lateral Raise onto Push (side delts
+// stay ~7), Barbell Curl onto Pull (biceps stay ~9). Full rebuild, he signed off.
+function rebuildV11(plan) {
+  const days = {
+    Tue: [
+      { id: 'Incline_Dumbbell_Press', sets: 4, reps: '8-12', rest: 90 },
+      { id: 'Cable_Chest_Press', sets: 3, reps: '8-12', rest: 75 },
+      { id: 'Decline_Dumbbell_Flyes', sets: 3, reps: '10-15', rest: 60 },
+      { id: 'Dumbbell_Shoulder_Press', sets: 3, reps: '8-10', rest: 90 },
+      { id: 'Side_Lateral_Raise', sets: 4, reps: '12-20', rest: 75 },
+      { id: 'Cable_Lateral_Raise', sets: 3, reps: '15-20', rest: 45 },
+      { id: 'Triceps_Pushdown', sets: 3, reps: '10-15', rest: 60 },
+    ],
+    Thu: [
+      { id: 'Close-Grip_Front_Lat_Pulldown', sets: 4, reps: '8-12', rest: 90 },
+      { id: 'Wide-Grip_Lat_Pulldown', sets: 3, reps: '10-12', rest: 90 },
+      { id: 'Seated_Cable_Rows', sets: 4, reps: '10-12', rest: 90 },
+      { id: 'Face_Pull', sets: 3, reps: '15-20', rest: 60 },
+      { id: 'Incline_Dumbbell_Curl', sets: 3, reps: '10-12', rest: 60 },
+      { id: 'Alternate_Hammer_Curl', sets: 3, reps: '10-12', rest: 60 },
+      { id: 'Barbell_Curl', sets: 3, reps: '8-12', rest: 60 },
+    ],
+    Fri: [
+      { id: 'Leg_Press', sets: 4, reps: '10-12', rest: 120 },
+      { id: 'Band_Good_Morning_Pull_Through', sets: 3, reps: '12-15', rest: 90 },
+      { id: 'Seated_Leg_Curl', sets: 3, reps: '10-12', rest: 90 },
+      { id: 'Standing_Calf_Raises', sets: 3, reps: '12-15', rest: 60 },
+      { id: 'Air_Bike', sets: 3, reps: '15-20', rest: 45 },
+      { id: 'Plank', sets: 3, reps: '45s', rest: 45 },
+    ],
+    Sat: [
+      { id: 'Kettlebell_Hang_Clean', sets: 3, reps: '8', rest: 60 },
+      { id: 'One-Arm_Kettlebell_Swings', sets: 4, reps: '12', rest: 45 },
+      { id: 'Two-Arm_Kettlebell_Military_Press', sets: 3, reps: '8-10', rest: 60 },
+      { id: 'One-Arm_Kettlebell_Row', sets: 3, reps: '10', rest: 45 },
+      { id: 'Bent-Knee_Hip_Raise', sets: 3, reps: '15', rest: 45 },
+      { id: '3_4_Sit-Up', sets: 3, reps: '15', rest: 45 },
+    ],
+  };
+  for (const day of plan) if (days[day.dow]) day.items = days[day.dow].map(x => ({ ...x }));
+  // the Saturday title changes job too — retitle only if it's still the old Arms day
+  const sat = plan.find(d => d.dow === 'Sat');
+  if (sat) sat.title = 'Kettlebell + Core · at home';
+  return plan;
+}
+
 export async function getPlan() {
   let plan = await db.get('plan', null);
   if (!plan) {
@@ -150,6 +202,7 @@ export async function getPlan() {
     if (stored < 8) plan = reorderPushAddHinge(plan);
     if (stored < 9) plan = dropLunges(plan);
     if (stored < 10) plan = rebuildV10(plan);
+    if (stored < 11) plan = rebuildV11(plan);
   }
   await db.set('plan', plan);
   await db.set('planVersion', PLAN_VERSION);
